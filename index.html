@@ -65,12 +65,16 @@
             <div class="text-sm font-bold text-white">🔓 向量2：SSH暴力破解</div>
             <div class="text-xs text-gray-500 mt-0.5">高频非法登录触发身份审计熔断</div>
           </button>
+          <button onclick="simulateAttack('udp')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all">
+            <div class="text-sm font-bold text-white">🌊 向量3：网络流量激增</div>
+            <div class="text-xs text-gray-500 mt-0.5">UDP Flood 触发流量嗅探阈值</div>
+          </button>
           <button onclick="simulateAttack('net')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all">
-            <div class="text-sm font-bold text-white">✂️ 向量3：用户指令断网</div>
+            <div class="text-sm font-bold text-white">✂️ 向量4：用户指令断网</div>
             <div class="text-xs text-gray-500 mt-0.5">语音/文字指令触发极速路由响应</div>
           </button>
-          <button onclick="resetSystem()" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-700 hover:border-green-500 transition-all">
-            <div class="text-sm font-bold text-green-400">🔄 重置系统状态</div>
+          <button onclick="resetSystem()" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-700 hover:border-green-500 transition-all mt-2">
+            <div class="text-sm font-bold text-green-400 text-center">🔄 重置系统状态</div>
           </button>
         </div>
       </div>
@@ -232,7 +236,7 @@
   // 时钟
   setInterval(()=>{ document.getElementById('clock').innerText = new Date().toTimeString().split(' ')[0]; },1000);
 
-  // Tab 切换逻辑 (核心修复)
+  // Tab 切换逻辑
   function switchTab(name, btn){
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -301,10 +305,17 @@
     box.className = 'border border-[#00ffcc] p-3 text-center rounded-lg bg-[#00ffcc]/10 transition-all duration-500';
     txt.className = 'text-xl font-bold neon mono tracking-widest';
     txt.innerText = 'ONLINE';
+    
     document.getElementById('cpu-bar').className = 'bar-fill bg-[#00ffcc]';
     document.getElementById('cpu-bar').style.width = '12%';
     document.getElementById('cpu-text').innerText = '12.0%';
     document.getElementById('cpu-text').className = 'neon';
+    
+    document.getElementById('net-bar').className = 'bar-fill bg-[#00ffcc]';
+    document.getElementById('net-bar').style.width = '5%';
+    document.getElementById('net-text').innerText = '0.02MB/s';
+    document.getElementById('net-text').className = 'neon';
+
     document.getElementById('sys-status').className = 'text-green-400';
     document.getElementById('sys-status').innerText = '● SYSTEM ONLINE';
     
@@ -327,6 +338,7 @@
     if(sysState.attacking) return;
     sysState.attacking = true;
 
+    // 1. CPU 满载攻击
     if(type === 'cpu'){
       appendChat('user', '【评委模拟】执行算力满载攻击脚本...');
       addLog('[嗅探器] 检测到 CPU 异常飙升...', 'warn');
@@ -336,7 +348,7 @@
         document.getElementById('cpu-text').innerText = c.toFixed(1)+'%';
         document.getElementById('cpu-bar').style.width = c+'%';
         document.getElementById('cpu-bar').className = 'bar-fill bg-red-500';
-        document.getElementById('cpu-text').className = 'text-red-400';
+        document.getElementById('cpu-text').className = 'text-red-400 font-bold';
         addLog(`[嗅探器 CPU] 高负载持续 (${c.toFixed(1)}%)，超过阈值！`, 'warn');
         if(ti >= 5){ 
           clearInterval(iv); triggerLockdown();
@@ -348,6 +360,7 @@
       }, 300);
     }
 
+    // 2. SSH 暴力破解
     if(type === 'ssh'){
       appendChat('user', '【评委模拟】执行 SSH 字典暴力破解...');
       let count = 0;
@@ -364,6 +377,30 @@
       }, 250);
     }
 
+    // 3. UDP Flood 网络流量激增
+    if(type === 'udp'){
+      appendChat('user', '【评委模拟】执行 UDP Flood 网络流量激增攻击...');
+      addLog('[嗅探器] 检测到异常出站流量突增...', 'warn');
+      let netVal = 0.02, ti = 0;
+      const iv = setInterval(()=>{
+        netVal = netVal * 4 + Math.random() * 10; 
+        ti++;
+        document.getElementById('net-text').innerText = netVal.toFixed(1) + 'MB/s';
+        document.getElementById('net-bar').style.width = Math.min((netVal/50)*100, 100) + '%';
+        document.getElementById('net-bar').className = 'bar-fill bg-red-500';
+        document.getElementById('net-text').className = 'text-red-400 font-bold';
+        addLog(`[嗅探器 NET] 异常流量持续 (${netVal.toFixed(1)}MB/s)，远超基线！`, 'warn');
+        if(ti >= 5){
+          clearInterval(iv); triggerLockdown();
+          setTimeout(()=>{
+            appendChat('ai', `<div><span class="text-gray-400">拦截原因：</span>网络流量激增 (UDP Flood)</div><div class="mt-2"><span class="text-gray-400">AI 分析：</span>检测到向未知 IP 的高频大数据包发送，疑似 DDoS 攻击或数据外发窃取。</div><div class="mt-2"><span class="text-gray-400">排查建议：</span>检查网络连接状态，拦截对应恶意 IP。</div>`, true);
+            sysState.attacking = false;
+          }, 800);
+        }
+      }, 350);
+    }
+
+    // 4. 用户指令断网
     if(type === 'net'){
       appendChat('user', '断网');
       addLog('[ROUTER] 极速指令命中: net_cut (耗时: 0.012ms)', 'success');
