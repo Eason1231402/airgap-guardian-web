@@ -636,56 +636,247 @@
 
 <script>
   // 时钟
-  setInterval(()=>{ document.getElementById('clock').innerText = new Date().toTimeString().split(' ')[0]; }, 1000);
+  setInterval(()=>{ document.getElementById('clock').innerText = new Date().toTimeString().split(' ')[0]; },1000);
 
   // Tab 切换
-  function switchTab(name, btn) {
+  function switchTab(name,btn){
     document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('tab-'+name).classList.add('active');
     btn.classList.add('active');
   }
 
-  // 日志过滤
-  function filterLogs(level, btn) {
+  // 审计日志筛选
+  function filterLogs(level,btn){
     document.querySelectorAll('.audit-filter').forEach(b=>{
-      b.className = 'px-3 py-1 text-xs mono rounded border border-gray-700 text-gray-400 audit-filter';
+      b.className='px-3 py-1 text-xs mono rounded border border-gray-700 text-gray-400 audit-filter';
     });
-    btn.className = 'px-3 py-1 text-xs mono rounded bg-[#00ffcc] text-black font-bold audit-filter';
-    const rows = document.querySelectorAll('.audit-row');
-    let count = 0;
-    rows.forEach(r=>{
-      if(level==='all' || r.dataset.level===level){ r.style.display=''; count++; }
-      else r.style.display='none';
+    btn.className='px-3 py-1 text-xs mono rounded bg-[#00ffcc] text-black font-bold audit-filter';
+    let count=0;
+    document.querySelectorAll('.audit-row').forEach(r=>{
+      const show = level==='all' || r.dataset.level===level;
+      r.style.display = show ? '' : 'none';
+      if(show) count++;
     });
-    document.getElementById('log-count').innerText = count;
+    document.getElementById('log-count').innerText=count;
   }
 
-  // 添加日志
-  function addLog(msg, type='info') {
-    const term = document.getElementById('terminal-logs');
-    const div = document.createElement('div');
-    const t = new Date().toTimeString().split(' ')[0];
-    const colors = {info:'severity-info',warn:'severity-medium',error:'severity-critical',success:'severity-low'};
-    div.className = 'log-row ' + (colors[type]||'severity-info');
-    div.innerText = `[${t}] ${msg}`;
+  // 实时日志
+  function addLog(msg,type='info'){
+    const term=document.getElementById('terminal-logs');
+    const div=document.createElement('div');
+    const t=new Date().toTimeString().split(' ')[0];
+    const map={info:'severity-info',warn:'severity-medium',error:'severity-critical',success:'severity-low'};
+    div.className='log-row '+(map[type]||'severity-info');
+    div.innerText=`[${t}] ${msg}`;
     term.appendChild(div);
-    term.scrollTop = term.scrollHeight;
+    term.scrollTop=term.scrollHeight;
   }
 
-  // 添加聊天
-  function appendChat(role, content, isTicket=false) {
-    const box = document.getElementById('chat-output');
-    const div = document.createElement('div');
-    const t = new Date().toTimeString().split(' ')[0];
+  // 聊天消息
+  function appendChat(role,content,isTicket=false){
+    const box=document.getElementById('chat-output');
+    const wrap=document.createElement('div');
+    const t=new Date().toTimeString().split(' ')[0];
     if(role==='user'){
-      div.className='flex gap-3 flex-row-reverse';
-      div.innerHTML=`<div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center shrink-0 text-white text-xs font-bold">U</div><div class="flex-1 text-right"><div class="text-xs text-gray-500 mb-1 mono">${t}</div><div class="inline-block bg-gray-800 text-white text-sm px-4 py-2 rounded-lg rounded-tr-none">${content}</div></div>`;
+      wrap.className='flex gap-3 flex-row-reverse';
+      wrap.innerHTML=`<div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center shrink-0 text-white text-xs font-bold">U</div><div class="flex-1 text-right"><div class="text-xs text-gray-500 mb-1 mono">${t}</div><div class="inline-block bg-gray-800 text-white text-sm px-4 py-2 rounded-lg rounded-tr-none">${content}</div></div>`;
     } else {
-      let inner = `<div class="w-8 h-8 rounded bg-[#00ffcc]/20 border border-[#00ffcc] flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div><div class="flex-1"><div class="text-xs text-gray-500 mb-1 mono">QWEN2.5 | ${t}</div>`;
-      if(isTicket){
-        inner+=`<div class="bg-red-900/20 border border-red-500/50 rounded-lg p-4 mt-1"><div class="flex items-center gap-2 text-red-400 font-bold mb-3 border-b border-red-500/30 pb-2 text-sm">⚠ 离线安全威胁评估报告 (Incident Report)</div><div class="grid grid-cols-2 gap-3 mb-3 text-xs"><div><div class="text-gray-500">威胁等级</div><div class="text-red-400 mono font-bold">CRITICAL</div></div><div><div class="text-gray-500">隔离状态</div><div class="neon mono font-bold">AIR-GAP ISOLATED</div></div></div><div class="space-y-2 text-sm text-gray-300">${content}</div><div class="mt-3 pt-2 border-t border-red-500/30 text-xs text-gray-500">输入 <span class="neon mono">恢复网络</span> 解除物理熔断</div></div>`;
-      } else {
-        inner+=`<div class="text-sm text-gray-300 leading-relaxed">${content}</div>`;
+      let body = isTicket
+        ? `<div class="bg-red-900/20 border border-red-500/40 rounded-lg p-4 mt-1"><div class="text-red-400 font-bold text-sm mb-3 border-b border-red-500/30 pb-2 flex items-center gap-2">⚠ 离线安全威胁评估报告 (Incident Report)</div><div class="grid grid-cols-2 gap-3 mb-3 text-xs"><div><div class="text-gray-500">威胁等级</div><div class="text-red-400 mono font-bold">CRITICAL</div></div><div><div class="text-gray-500">隔离状态</div><div class="neon mono font-bold">AIR-GAP ISOLATED</div></div></div><div class="space-y-2 text-sm text-gray-300">${content}</div><div class="mt-3 pt-2 border-t border-red-500/20 text-xs text-gray-500">输入 <span class="neon mono">恢复网络</span> 解除物理熔断</div></div>`
+        : `<div class="text-sm text-gray-300 leading-relaxed">${content}</div>`;
+      wrap.className='flex gap-3';
+      wrap.innerHTML=`<div class="w-8 h-8 rounded bg-[#00ffcc]/20 border border-[#00ffcc] flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div><div class="flex-1"><div class="text-xs text-gray-500 mb-1 mono">QWEN2.5_ROUTER | ${t}</div>${body}</div>`;
+    }
+    box.appendChild(wrap);
+    box.scrollTop=box.scrollHeight;
+  }
+
+  // 触发熔断 UI
+  let sysState={relay:'ONLINE',attacking:false,challenge:false};
+
+  function triggerLockdown(){
+    sysState.relay='SEVERED';
+    const box=document.getElementById('relay-box');
+    const txt=document.getElementById('relay-text');
+    box.className='border border-red-500 p-3 text-center rounded-lg bg-red-500/10 transition-all duration-500 blink';
+    txt.className='text-xl font-bold neon-red mono tracking-widest';
+    txt.innerText='SEVERED (熔断)';
+    document.getElementById('light-status').innerText='ON (警示)';
+    document.getElementById('light-status').className='text-sm font-bold text-red-400 mt-0.5';
+    document.getElementById('light-mode').innerText='红色熔断模式';
+    document.getElementById('sys-status').className='text-red-400';
+    document.getElementById('sys-status').innerText='● LOCKDOWN';
+    const tr=document.getElementById('topo-relay');
+    if(tr){ tr.innerText='● OPEN'; tr.className='text-red-400 mono'; }
+    
+    // 拓扑图连线变红
+    const wanLine = document.getElementById('wan-line');
+    if(wanLine) wanLine.setAttribute('stroke', '#ff4444');
+    
+    addLog('[CRITICAL] GPIO-22 继电器断电！广域网物理隔离！','error');
+  }
+
+  // 重置系统
+  function resetSystem(){
+    sysState={relay:'ONLINE',attacking:false,challenge:false};
+    const box=document.getElementById('relay-box');
+    const txt=document.getElementById('relay-text');
+    box.className='border border-[#00ffcc] p-3 text-center rounded-lg bg-[#00ffcc]/10 transition-all duration-500';
+    txt.className='text-xl font-bold neon mono tracking-widest';
+    txt.innerText='ONLINE';
+    document.getElementById('cpu-bar').className='bar-fill bg-[#00ffcc]';
+    document.getElementById('cpu-bar').style.width='12%';
+    document.getElementById('cpu-text').innerText='12.0%';
+    document.getElementById('cpu-text').className='neon';
+    document.getElementById('light-status').innerText='OFF';
+    document.getElementById('light-status').className='text-sm font-bold text-white mt-0.5';
+    document.getElementById('light-mode').innerText='普通';
+    document.getElementById('sys-status').className='text-green-400';
+    document.getElementById('sys-status').innerText='● SYSTEM ONLINE';
+    const tr=document.getElementById('topo-relay');
+    if(tr){ tr.innerText='● CLOSED'; tr.className='text-green-400 mono'; }
+    
+    const wanLine = document.getElementById('wan-line');
+    if(wanLine) wanLine.setAttribute('stroke', '#00ffcc44');
+
+    appendChat('ai','✅ 系统已重置，所有模块恢复正常状态。广域网继电器重新吸合，可再次进行演示。');
+    addLog('[SYSTEM] 系统状态已重置','success');
+  }
+
+  // 攻击模拟
+  function simulateAttack(type){
+    if(sysState.relay==='SEVERED'){
+      appendChat('ai','⚠️ 系统已处于熔断状态。请先输入 <span class="neon mono">恢复网络</span> 或点击【重置系统状态】解除。');
+      return;
+    }
+    if(sysState.attacking) return;
+    sysState.attacking=true;
+
+    if(type==='cpu'){
+      appendChat('user','【评委模拟】执行算力满载攻击脚本...');
+      addLog('[嗅探器] 检测到 CPU 异常飙升...','warn');
+      let c=12,ti=0;
+      const iv=setInterval(()=>{
+        c=Math.min(c+18,99.9); ti++;
+        document.getElementById('cpu-text').innerText=c.toFixed(1)+'%';
+        document.getElementById('cpu-bar').style.width=c+'%';
+        document.getElementById('cpu-bar').className='bar-fill bg-red-500';
+        document.getElementById('cpu-text').className='text-red-400';
+        addLog(`[嗅探器 CPU] 高负载持续 (${c.toFixed(1)}%)，超过阈值！`,'warn');
+        if(ti>=5){ 
+          clearInterval(iv); triggerLockdown();
+          setTimeout(()=>{
+            appendChat('ai',
+              `<div><span class="text-gray-400">拦截原因：</span>CPU 持续满载 (99.9%)，持续时长超过 10s 阈值</div>
+               <div class="mt-2"><span class="text-gray-400">AI 分析：</span>疑似恶意挖矿脚本注入或勒索软件加密行为，进程 PID:4821</div>
+               <div class="mt-2"><span class="text-gray-400">排查建议：</span>立即检查本地进程列表，排查未知的高耗能脚本；检查散热系统是否正常。</div>`, true);
+            sysState.attacking=false;
+          }, 800);
+        }
+      }, 300);
+    }
+
+    if(type==='ssh'){
+      appendChat('user','【评委模拟】执行 SSH 字典暴力破解...');
+      let count=0;
+      const iv=setInterval(()=>{
+        count++;
+        addLog(`[嗅探器 SSH] 检测到失败登录，来源 IP: 192.168.1.105，累计 ${count} 次`,'warn');
+        if(count>=5){
+          clearInterval(iv); triggerLockdown();
+          setTimeout(()=>{
+            appendChat('ai',
+              `<div><span class="text-gray-400">拦截原因：</span>非法入侵嗅探 (60秒内检测到 5 次 SSH 暴力破解尝试)</div>
+               <div class="mt-2"><span class="text-gray-400">AI 分析：</span>系统正遭受来自非白名单 IP 的高频 SSH 字典攻击，存在极高的提权风险。</div>
+               <div class="mt-2"><span class="text-gray-400">排查建议：</span>检查 /var/log/auth.log 溯源攻击 IP；建议更改 SSH 默认端口并禁用密码登录。</div>`, true);
+            sysState.attacking=false;
+          }, 800);
+        }
+      }, 250);
+    }
+
+    if(type==='net'){
+      appendChat('user','断网');
+      addLog('[ROUTER] 极速指令命中: net_cut (耗时: 0.012ms)','success');
+      triggerLockdown();
+      appendChat('ai','✅ 物理熔断已触发，已切入纯局域网绝对隐私模式。');
+      sysState.attacking=false;
+    }
+  }
+
+  // 输入框处理
+  document.getElementById('btn-send').addEventListener('click',()=>{
+    const input=document.getElementById('cmd-input');
+    const text=input.value.trim();
+    if(!text) return;
+    input.value='';
+    appendChat('user',text);
+
+    if(text==='断网'){
+      simulateAttack('net');
+    }
+    else if(text==='恢复网络'){
+      if(sysState.relay==='ONLINE'){
+        appendChat('ai','当前网络已处于连接状态，无需恢复。');
+        return;
       }
+      addLog('[ROUTER] 极速指令命中: net_restore (耗时: 0.015ms)','success');
+      addLog('[AUTH] 触发动态口令挑战','warn');
+      appendChat('ai','⚠️ 检测到高危提权指令。防录音回放机制已激活。<br>请在15秒内复述动态口令：<span class="text-yellow-400 font-bold tracking-widest text-lg ml-2">847291</span>');
+      sysState.challenge=true;
+    }
+    else if(sysState.challenge && text.includes('847291')){
+      sysState.challenge=false;
+      addLog('[AUTH] 动态口令验证通过','success');
+      resetSystem();
+    }
+    else if(text==='开灯'){
+      document.getElementById('light-status').innerText='ON';
+      document.getElementById('light-status').className='text-sm font-bold text-white mt-0.5';
+      appendChat('ai','💡 照明已开启。');
+      addLog('[GPIO] 智能灯状态变更为: ON','success');
+    }
+    else if(text==='关灯'){
+      document.getElementById('light-status').innerText='OFF';
+      document.getElementById('light-status').className='text-sm font-bold text-gray-500 mt-0.5';
+      appendChat('ai','💡 照明已关闭。');
+      addLog('[GPIO] 智能灯状态变更为: OFF','success');
+    }
+    else {
+      addLog('[ROUTER] 极速路由未命中，转发至 Qwen2.5 算力中枢...','info');
+      document.getElementById('router-mode').innerText='大模型推理模式';
+      document.getElementById('router-mode').className='text-xs px-2 py-1 bg-purple-900/30 text-purple-400 border border-purple-800 rounded mono';
       
+      setTimeout(()=>{
+        appendChat('ai',`了解，Ethan。关于“${text}”，作为一个运行在边缘计算核心的智能体，我已经记录了您的需求。在当前的物理气隙隔离状态下，系统运行一切正常。`);
+        addLog('[JARVIS] 大模型推理完成 (耗时: 1240ms)','success');
+        
+        setTimeout(()=>{
+          document.getElementById('router-mode').innerText='极速路由模式';
+          document.getElementById('router-mode').className='text-xs px-2 py-1 bg-blue-900/30 text-blue-400 border border-blue-800 rounded mono';
+        }, 2000);
+      }, 1200);
+    }
+  });
+
+  document.getElementById('cmd-input').addEventListener('keypress',(e)=>{
+    if(e.key==='Enter') document.getElementById('btn-send').click();
+  });
+
+  // 随机波动数据模拟
+  setInterval(()=>{
+    if(sysState.attacking || sysState.relay==='SEVERED') return;
+    const cpu=(Math.random()*8+8).toFixed(1);
+    const temp=(Math.random()*2+42).toFixed(1);
+    const net=(Math.random()*0.05).toFixed(3);
+    
+    document.getElementById('cpu-text').innerText=cpu+'%';
+    document.getElementById('cpu-bar').style.width=cpu+'%';
+    document.getElementById('temp-text').innerText=temp+'°C';
+    document.getElementById('temp-bar').style.width=(temp/100*100)+'%';
+    document.getElementById('net-text').innerText=net+'MB/s';
+    
+    if(Math.random()>0.85) addLog(`[SNIFFER] 流量基线自适应调整: ${net} MB/s`,'info');
+  }, 2500);
+</script>
