@@ -6,13 +6,12 @@
   <title>AirGap-Guardian | 边缘计算物理气隙安全智能体</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap');
-    body { background:#050a0a; color:#e5e7eb; font-family:'Noto Sans SC',sans-serif; }
-    .mono { font-family:'JetBrains Mono',monospace; }
+    body { background:#050a0a; color:#e5e7eb; font-family: sans-serif; }
+    .mono { font-family: monospace; }
     .neon { color:#00ffcc; text-shadow:0 0 8px #00ffcc88; }
     .neon-red { color:#ff4444; text-shadow:0 0 8px #ff444488; }
     .glass { background:rgba(0,20,20,0.65); border:1px solid rgba(0,255,204,0.18); backdrop-filter:blur(10px); }
-    .tab-btn { padding:12px 20px; font-size:13px; cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; white-space:nowrap; }
+    .tab-btn { padding:12px 18px; font-size:13px; cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; }
     .tab-btn.active { color:#00ffcc; border-bottom-color:#00ffcc; }
     .tab-btn:not(.active) { color:#6b7280; }
     .tab-btn:not(.active):hover { color:#d1d5db; }
@@ -20,25 +19,12 @@
     .tab-content.active { display:block; }
     ::-webkit-scrollbar { width:4px; height:4px; }
     ::-webkit-scrollbar-thumb { background:#00ffcc44; border-radius:2px; }
-    .blink { animation:blink 1.2s infinite; }
-    @keyframes blink { 50%{opacity:0;} }
-    .pulse-dot { width:8px;height:8px;border-radius:50%;background:#00ffcc;animation:pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 #00ffcc66;} 50%{box-shadow:0 0 0 6px transparent;} }
-    .threat-row:hover { background:rgba(0,255,204,0.05); }
-    .bar-fill { height:100%; border-radius:2px; transition:width .8s ease; }
-    .topology-node { cursor:pointer; transition:all .3s; }
-    .topology-node:hover .node-box { border-color:#00ffcc !important; box-shadow:0 0 12px #00ffcc44; }
+    .bar-fill { height:100%; border-radius:2px; transition:width .6s ease; }
     .conn-line { stroke:#00ffcc44; stroke-width:1.5; stroke-dasharray:6,4; animation:dash 3s linear infinite; }
-    .conn-line.danger { stroke:#ff444466; }
     @keyframes dash { to{stroke-dashoffset:-20;} }
-    .log-row { padding:3px 0; border-bottom:1px solid #ffffff08; font-size:11px; }
-    .severity-critical { color:#ff4444; }
-    .severity-high { color:#ff8800; }
-    .severity-medium { color:#ffcc00; }
-    .severity-low { color:#00ffcc; }
-    .severity-info { color:#6b7280; }
-    .card-hover { transition:all .2s; }
-    .card-hover:hover { border-color:rgba(0,255,204,0.4) !important; transform:translateY(-1px); }
+    .log-row { padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:11px; }
+    .blink { animation:blink 1s infinite; }
+    @keyframes blink { 50%{opacity:0;} }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -46,9 +32,9 @@
 <!-- 顶部导航 -->
 <header class="h-14 border-b border-gray-800 bg-black/80 backdrop-blur flex items-center justify-between px-6 sticky top-0 z-50">
   <div class="flex items-center gap-3">
-    <div class="pulse-dot"></div>
+    <div class="w-2 h-2 rounded-full bg-[#00ffcc] blink"></div>
     <span class="mono font-bold text-lg text-white">AirGap<span class="neon">-Guardian</span></span>
-    <span class="text-xs text-gray-600 border border-gray-800 px-2 py-0.5 rounded mono ml-1">v12.2 · IEEE GAIIS2026</span>
+    <span class="text-xs text-gray-600 border border-gray-800 px-2 py-0.5 rounded mono ml-1">v12.2 · IEEE</span>
   </div>
   <nav class="flex">
     <button class="tab-btn active mono" onclick="switchTab('monitor',this)">全景监控台</button>
@@ -56,579 +42,187 @@
     <button class="tab-btn mono" onclick="switchTab('topology',this)">物理拓扑 (Topology)</button>
     <button class="tab-btn mono" onclick="switchTab('audit',this)">安全审计日志</button>
   </nav>
-  <div class="mono text-xs text-gray-500">
+  <div class="mono text-xs text-gray-500 flex items-center gap-3">
     <span id="clock" class="text-white">00:00:00</span>
-    <span class="ml-3 text-green-400">● SYSTEM ONLINE</span>
+    <span id="sys-status" class="text-green-400">● SYSTEM ONLINE</span>
   </div>
 </header>
 
-<!-- ========== TAB 1: 全景监控台 ========== -->
-<div id="tab-monitor" class="tab-content active flex-1 grid grid-cols-12 gap-4 p-4" style="min-height:calc(100vh - 56px)">
-
-  <!-- 左侧：评委演示 + 硬件遥测 -->
-  <div class="col-span-3 flex flex-col gap-4">
-    <!-- 评委演示 -->
-    <div class="glass p-4 rounded-xl relative overflow-hidden">
-      <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-[#00ffcc] to-transparent"></div>
-      <h2 class="text-sm font-bold neon mb-1 flex items-center gap-2">⚡ 评委快速演示 (Judge Demo)</h2>
-      <p class="text-xs text-gray-500 mb-3">点击预设攻击向量，体验物理气隙熔断与大模型自动取证全流程。</p>
-      <div class="space-y-2">
-        <button onclick="simulateAttack('cpu')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all group">
-          <div class="text-sm font-bold text-white group-hover:neon">🔥 向量1：算力满载攻击</div>
-          <div class="text-xs text-gray-500 mt-0.5">恶意挖矿榨干CPU触发热力学熔断</div>
-        </button>
-        <button onclick="simulateAttack('ssh')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all group">
-          <div class="text-sm font-bold text-white group-hover:neon">🔓 向量2：SSH暴力破解</div>
-          <div class="text-xs text-gray-500 mt-0.5">高频非法登录触发身份审计熔断</div>
-        </button>
-        <button onclick="simulateAttack('net')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all group">
-          <div class="text-sm font-bold text-white group-hover:neon">✂️ 向量3：用户指令断网</div>
-          <div class="text-xs text-gray-500 mt-0.5">语音/文字指令触发极速路由响应</div>
-        </button>
-        <button onclick="resetSystem()" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-700 hover:border-green-500 transition-all">
-          <div class="text-sm font-bold text-green-400">🔄 重置系统状态</div>
-        </button>
-      </div>
-    </div>
-
-    <!-- 硬件遥测 -->
-    <div class="glass p-4 rounded-xl flex-1">
-      <h2 class="mono text-xs text-gray-400 mb-4 pb-2 border-b border-gray-800">/// 边缘节点遥测 (Telemetry)</h2>
-      <div class="space-y-4">
-        <div>
-          <div class="flex justify-between text-xs mono mb-1">
-            <span class="text-gray-400">CPU (Qwen2.5 算力)</span>
-            <span id="cpu-text" class="neon">12.4%</span>
-          </div>
-          <div class="w-full bg-gray-900 h-1.5 rounded overflow-hidden">
-            <div id="cpu-bar" class="bar-fill bg-[#00ffcc]" style="width:12.4%"></div>
-          </div>
-        </div>
-        <div>
-          <div class="flex justify-between text-xs mono mb-1">
-            <span class="text-gray-400">核心温度 (Thermal)</span>
-            <span id="temp-text" class="neon">45.2°C</span>
-          </div>
-          <div class="w-full bg-gray-900 h-1.5 rounded overflow-hidden">
-            <div id="temp-bar" class="bar-fill bg-[#00ffcc]" style="width:45%"></div>
-          </div>
-        </div>
-        <div>
-          <div class="flex justify-between text-xs mono mb-1">
-            <span class="text-gray-400">出站流量 (wlan0)</span>
-            <span id="net-text" class="neon">0.02MB/s</span>
-          </div>
-          <div class="w-full bg-gray-900 h-1.5 rounded overflow-hidden">
-            <div id="net-bar" class="bar-fill bg-[#00ffcc]" style="width:5%"></div>
-          </div>
-        </div>
-        <div>
-          <div class="flex justify-between text-xs mono mb-1">
-            <span class="text-gray-400">内存占用 (RAM)</span>
-            <span class="neon">1.2 / 4.0 GB</span>
-          </div>
-          <div class="w-full bg-gray-900 h-1.5 rounded overflow-hidden">
-            <div class="bar-fill bg-[#00ffcc]" style="width:30%"></div>
-          </div>
+<!-- ===== TAB 1: 全景监控台 ===== -->
+<div id="tab-monitor" class="tab-content active p-4" style="min-height:calc(100vh - 56px)">
+  <div class="grid grid-cols-12 gap-4 h-full">
+    <!-- 左栏 -->
+    <div class="col-span-3 flex flex-col gap-4">
+      <div class="glass p-4 rounded-xl relative overflow-hidden">
+        <h2 class="text-sm font-bold neon mb-1">⚡ 评委快速演示 (Judge Demo)</h2>
+        <p class="text-xs text-gray-500 mb-3">点击预设攻击向量，体验物理气隙熔断全流程。</p>
+        <div class="space-y-2">
+          <button onclick="simulateAttack('cpu')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all">
+            <div class="text-sm font-bold text-white">🔥 向量1：算力满载攻击</div>
+            <div class="text-xs text-gray-500 mt-0.5">恶意挖矿榨干CPU触发热力学熔断</div>
+          </button>
+          <button onclick="simulateAttack('ssh')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all">
+            <div class="text-sm font-bold text-white">🔓 向量2：SSH暴力破解</div>
+            <div class="text-xs text-gray-500 mt-0.5">高频非法登录触发身份审计熔断</div>
+          </button>
+          <button onclick="simulateAttack('net')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all">
+            <div class="text-sm font-bold text-white">✂️ 向量3：用户指令断网</div>
+            <div class="text-xs text-gray-500 mt-0.5">语音/文字指令触发极速路由响应</div>
+          </button>
+          <button onclick="resetSystem()" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-700 hover:border-green-500 transition-all">
+            <div class="text-sm font-bold text-green-400">🔄 重置系统状态</div>
+          </button>
         </div>
       </div>
-      <div class="mt-4 pt-3 border-t border-gray-800">
-        <h2 class="mono text-xs text-gray-400 mb-2">/// 物理气隙状态 (Air-Gap)</h2>
-        <div id="relay-box" class="border border-[#00ffcc] p-3 text-center rounded-lg bg-[#00ffcc]/10 transition-all duration-500">
-          <div class="text-xs text-gray-400 mono mb-1">广域网继电器 GPIO-22</div>
-          <div id="relay-text" class="text-xl font-bold neon mono tracking-widest">ONLINE</div>
-        </div>
-      </div>
-      <div class="mt-3 grid grid-cols-2 gap-2">
-        <div class="bg-gray-900 border border-gray-800 p-2 rounded text-center">
-          <div class="text-xs text-gray-500">照明状态</div>
-          <div id="light-status" class="text-sm font-bold text-white mt-0.5">OFF</div>
-        </div>
-        <div class="bg-gray-900 border border-gray-800 p-2 rounded text-center">
-          <div class="text-xs text-gray-500">光学模式</div>
-          <div id="light-mode" class="text-sm font-bold text-white mt-0.5">普通</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 中间：J.A.R.V.I.S 路由中枢 -->
-  <div class="col-span-6 flex flex-col">
-    <div class="glass rounded-xl flex-1 flex flex-col overflow-hidden">
-      <div class="bg-gray-900/80 px-4 py-3 border-b border-gray-800 flex justify-between items-center">
-        <span class="text-sm font-bold text-white mono">J.A.R.V.I.S 混合路由中枢</span>
-        <div class="flex items-center gap-2">
-          <span class="text-xs px-2 py-1 bg-green-900/30 text-green-400 border border-green-800 rounded mono">Qwen2.5 7B Active</span>
-          <span id="router-mode" class="text-xs px-2 py-1 bg-blue-900/30 text-blue-400 border border-blue-800 rounded mono">极速路由模式</span>
-        </div>
-      </div>
-      <div id="chat-output" class="flex-1 overflow-y-auto p-5 space-y-5 bg-black/30" style="max-height:calc(100vh - 220px)">
-        <div class="flex gap-3">
-          <div class="w-8 h-8 rounded bg-[#00ffcc]/20 border border-[#00ffcc] flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div>
-          <div class="flex-1">
-            <div class="text-xs text-gray-500 mb-1 mono">SYSTEM_INIT | 00:00:00</div>
-            <div class="text-sm text-gray-300 leading-relaxed">您好，评委老师。我是 <span class="neon font-bold">AirGap-Guardian</span> 边缘计算核心的智能体 J.A.R.V.I.S。<br><br>本系统采用 <strong class="text-white">扁平化极速路由 + 大模型深度推理</strong> 的混合架构，将数据安全从"软件层"降维至"<strong class="text-white">物理层</strong>"。<br><br>请点击左侧【评委快速演示】按钮，体验毫秒级熔断与自动化取证能力。</div>
-          </div>
-        </div>
-      </div>
-      <div class="p-3 bg-gray-900/50 border-t border-gray-800">
-        <div class="flex gap-2 items-center bg-black border border-gray-700 p-1.5 rounded-lg focus-within:border-[#00ffcc] transition-colors">
-          <span class="neon mono font-bold pl-2 text-sm">❯</span>
-          <input type="text" id="cmd-input" class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2 placeholder-gray-600 mono" placeholder="输入指令 (断网 / 恢复网络 / 开灯 / 关灯) 或与 Qwen2.5 对话..." autocomplete="off">
-          <button id="btn-send" class="px-4 py-1.5 bg-[#00ffcc] text-black font-bold rounded hover:bg-white transition-colors text-sm mono">执行 (Enter)</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 右侧：实时日志 -->
-  <div class="col-span-3 flex flex-col gap-4">
-    <div class="glass p-0 rounded-xl flex-1 flex flex-col overflow-hidden">
-      <div class="bg-gray-900/80 px-4 py-2 border-b border-gray-800 flex justify-between items-center">
-        <span class="mono text-xs text-gray-400">/var/log/syslog (Real-time)</span>
-        <span class="text-xs text-green-400 mono">● LIVE</span>
-      </div>
-      <div id="terminal-logs" class="flex-1 overflow-y-auto p-3 space-y-0.5 mono bg-black/50" style="max-height:calc(100vh - 200px)">
-        <div class="log-row severity-info">[SYSTEM] 边缘节点启动成功...</div>
-        <div class="log-row severity-info">[SYSTEM] 嗅探器线程就绪 (CPU/Temp/Net/SSH)</div>
-        <div class="log-row severity-low">[SNIFFER] 基线自适应校准完成</div>
-        <div class="log-row severity-info">[JARVIS] Qwen2.5 7B 模型加载完毕</div>
-        <div class="log-row severity-low">[GPIO] 继电器 GPIO-22 状态: CLOSED (通电)</div>
-        <div class="log-row severity-info">[AUTH] 动态口令模块就绪</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== TAB 2: 威胁狩猎 ========== -->
-<div id="tab-hunting" class="tab-content p-6" style="min-height:calc(100vh - 56px)">
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold text-white mb-1">威胁狩猎中心 <span class="neon">Threat Hunting</span></h1>
-    <p class="text-gray-400 text-sm">基于 Qwen2.5 大模型的离线威胁情报分析，实时嗅探多维异常特征，主动发现潜在攻击向量。</p>
-  </div>
-
-  <!-- 统计卡片 -->
-  <div class="grid grid-cols-4 gap-4 mb-6">
-    <div class="glass p-4 rounded-xl card-hover">
-      <div class="text-xs text-gray-400 mono mb-1">今日拦截事件</div>
-      <div class="text-3xl font-bold neon mono">47</div>
-      <div class="text-xs text-green-400 mt-1">↑ 12 较昨日</div>
-    </div>
-    <div class="glass p-4 rounded-xl card-hover">
-      <div class="text-xs text-gray-400 mono mb-1">物理熔断次数</div>
-      <div class="text-3xl font-bold text-orange-400 mono">3</div>
-      <div class="text-xs text-gray-500 mt-1">最近: 2分钟前</div>
-    </div>
-    <div class="glass p-4 rounded-xl card-hover">
-      <div class="text-xs text-gray-400 mono mb-1">平均响应时延</div>
-      <div class="text-3xl font-bold text-blue-400 mono">0.8<span class="text-lg">ms</span></div>
-      <div class="text-xs text-green-400 mt-1">极速路由命中率 94%</div>
-    </div>
-    <div class="glass p-4 rounded-xl card-hover">
-      <div class="text-xs text-gray-400 mono mb-1">系统安全评分</div>
-      <div class="text-3xl font-bold neon mono">98<span class="text-lg">/100</span></div>
-      <div class="text-xs text-green-400 mt-1">● 安全态势: 良好</div>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-3 gap-6">
-    <!-- 威胁事件列表 -->
-    <div class="col-span-2 glass rounded-xl overflow-hidden">
-      <div class="bg-gray-900/80 px-4 py-3 border-b border-gray-800 flex justify-between items-center">
-        <span class="text-sm font-bold text-white">近期威胁事件 (Threat Events)</span>
-        <span class="text-xs text-gray-500 mono">共 47 条</span>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-xs mono">
-          <thead>
-            <tr class="border-b border-gray-800 text-gray-500">
-              <th class="text-left p-3">时间戳</th>
-              <th class="text-left p-3">威胁类型</th>
-              <th class="text-left p-3">来源</th>
-              <th class="text-left p-3">严重程度</th>
-              <th class="text-left p-3">处置状态</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="threat-row border-b border-gray-900">
-              <td class="p-3 text-gray-400">01:24:33</td>
-              <td class="p-3 text-white">SSH 暴力破解</td>
-              <td class="p-3 text-gray-400">192.168.1.105</td>
-              <td class="p-3"><span class="severity-critical font-bold">CRITICAL</span></td>
-              <td class="p-3"><span class="text-green-400">✓ 物理熔断</span></td>
-            </tr>
-            <tr class="threat-row border-b border-gray-900">
-              <td class="p-3 text-gray-400">01:18:07</td>
-              <td class="p-3 text-white">算力异常满载</td>
-              <td class="p-3 text-gray-400">本地进程 PID:4821</td>
-              <td class="p-3"><span class="severity-critical font-bold">CRITICAL</span></td>
-              <td class="p-3"><span class="text-green-400">✓ 物理熔断</span></td>
-            </tr>
-            <tr class="threat-row border-b border-gray-900">
-              <td class="p-3 text-gray-400">00:55:41</td>
-              <td class="p-3 text-white">异常出站流量</td>
-              <td class="p-3 text-gray-400">wlan0 → 外网</td>
-              <td class="p-3"><span class="severity-high font-bold">HIGH</span></td>
-              <td class="p-3"><span class="text-green-400">✓ 流量截断</span></td>
-            </tr>
-            <tr class="threat-row border-b border-gray-900">
-              <td class="p-3 text-gray-400">00:42:19</td>
-              <td class="p-3 text-white">录音回放攻击</td>
-              <td class="p-3 text-gray-400">USB 音频设备</td>
-              <td class="p-3"><span class="severity-high font-bold">HIGH</span></td>
-              <td class="p-3"><span class="text-green-400">✓ 口令验证失败</span></td>
-            </tr>
-            <tr class="threat-row border-b border-gray-900">
-              <td class="p-3 text-gray-400">00:31:55</td>
-              <td class="p-3 text-white">端口扫描探测</td>
-              <td class="p-3 text-gray-400">10.0.0.23</td>
-              <td class="p-3"><span class="severity-medium font-bold">MEDIUM</span></td>
-              <td class="p-3"><span class="text-yellow-400">⚠ 监控中</span></td>
-            </tr>
-            <tr class="threat-row border-b border-gray-900">
-              <td class="p-3 text-gray-400">00:20:03</td>
-              <td class="p-3 text-white">温度突变告警</td>
-              <td class="p-3 text-gray-400">CPU Core 0</td>
-              <td class="p-3"><span class="severity-medium font-bold">MEDIUM</span></td>
-              <td class="p-3"><span class="text-green-400">✓ 降频处理</span></td>
-            </tr>
-            <tr class="threat-row border-b border-gray-900">
-              <td class="p-3 text-gray-400">00:11:28</td>
-              <td class="p-3 text-white">非白名单进程</td>
-              <td class="p-3 text-gray-400">PID:3301 unknown</td>
-              <td class="p-3"><span class="severity-low font-bold">LOW</span></td>
-              <td class="p-3"><span class="text-green-400">✓ 进程终止</span></td>
-            </tr>
-            <tr class="threat-row">
-              <td class="p-3 text-gray-400">00:03:14</td>
-              <td class="p-3 text-white">登录时间异常</td>
-              <td class="p-3 text-gray-400">user: pi</td>
-              <td class="p-3"><span class="severity-low font-bold">LOW</span></td>
-              <td class="p-3"><span class="text-blue-400">→ AI 分析中</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- 右侧：威胁分布 + AI 分析 -->
-    <div class="flex flex-col gap-4">
-      <div class="glass p-4 rounded-xl">
-        <h3 class="text-sm font-bold text-white mb-4">威胁类型分布</h3>
-        <div class="space-y-3">
-          <div>
-            <div class="flex justify-between text-xs mono mb-1"><span class="text-gray-400">SSH 暴力破解</span><span class="text-white">38%</span></div>
-            <div class="w-full bg-gray-900 h-2 rounded overflow-hidden"><div class="bar-fill bg-red-500" style="width:38%"></div></div>
-          </div>
-          <div>
-            <div class="flex justify-between text-xs mono mb-1"><span class="text-gray-400">算力异常</span><span class="text-white">24%</span></div>
-            <div class="w-full bg-gray-900 h-2 rounded overflow-hidden"><div class="bar-fill bg-orange-500" style="width:24%"></div></div>
-          </div>
-          <div>
-            <div class="flex justify-between text-xs mono mb-1"><span class="text-gray-400">流量异常</span><span class="text-white">19%</span></div>
-            <div class="w-full bg-gray-900 h-2 rounded overflow-hidden"><div class="bar-fill bg-yellow-500" style="width:19%"></div></div>
-          </div>
-          <div>
-            <div class="flex justify-between text-xs mono mb-1"><span class="text-gray-400">录音回放</span><span class="text-white">11%</span></div>
-            <div class="w-full bg-gray-900 h-2 rounded overflow-hidden"><div class="bar-fill bg-purple-500" style="width:11%"></div></div>
-          </div>
-          <div>
-            <div class="flex justify-between text-xs mono mb-1"><span class="text-gray-400">其他</span><span class="text-white">8%</span></div>
-            <div class="w-full bg-gray-900 h-2 rounded overflow-hidden"><div class="bar-fill bg-gray-500" style="width:8%"></div></div>
-          </div>
-        </div>
-      </div>
-
       <div class="glass p-4 rounded-xl flex-1">
-        <h3 class="text-sm font-bold text-white mb-3">🤖 Qwen2.5 AI 威胁研判</h3>
-        <div class="space-y-3 text-xs text-gray-300 leading-relaxed">
-          <div class="bg-red-900/20 border border-red-800/50 p-3 rounded-lg">
-            <div class="text-red-400 font-bold mb-1">高危预警</div>
-            检测到 SSH 暴力破解频率在过去 1 小时内增长 340%，疑似针对性渗透测试。建议立即更换 SSH 端口并启用密钥认证。
+        <h2 class="mono text-xs text-gray-400 mb-4 pb-2 border-b border-gray-800">/// 边缘节点遥测 (Telemetry)</h2>
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between text-xs mono mb-1"><span class="text-gray-400">CPU (Qwen2.5 算力)</span><span id="cpu-text" class="neon">12.4%</span></div>
+            <div class="w-full bg-gray-900 h-1.5 rounded overflow-hidden"><div id="cpu-bar" class="bar-fill bg-[#00ffcc]" style="width:12.4%"></div></div>
           </div>
-          <div class="bg-yellow-900/20 border border-yellow-800/50 p-3 rounded-lg">
-            <div class="text-yellow-400 font-bold mb-1">趋势分析</div>
-            算力异常事件集中在 00:00-02:00 时段，与挖矿木马活跃时间窗口高度吻合。
+          <div>
+            <div class="flex justify-between text-xs mono mb-1"><span class="text-gray-400">核心温度 (Thermal)</span><span id="temp-text" class="neon">45.2°C</span></div>
+            <div class="w-full bg-gray-900 h-1.5 rounded overflow-hidden"><div id="temp-bar" class="bar-fill bg-[#00ffcc]" style="width:45%"></div></div>
           </div>
-          <div class="bg-blue-900/20 border border-blue-800/50 p-3 rounded-lg">
-            <div class="text-blue-400 font-bold mb-1">防御建议</div>
-            当前物理气隙隔离策略有效拦截了所有 CRITICAL 级威胁，零信任架构运行正常。
+          <div>
+            <div class="flex justify-between text-xs mono mb-1"><span class="text-gray-400">出站流量 (wlan0)</span><span id="net-text" class="neon">0.02MB/s</span></div>
+            <div class="w-full bg-gray-900 h-1.5 rounded overflow-hidden"><div id="net-bar" class="bar-fill bg-[#00ffcc]" style="width:5%"></div></div>
           </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-gray-800">
+          <h2 class="mono text-xs text-gray-400 mb-2">/// 物理气隙状态 (Air-Gap)</h2>
+          <div id="relay-box" class="border border-[#00ffcc] p-3 text-center rounded-lg bg-[#00ffcc]/10 transition-all duration-500">
+            <div class="text-xs text-gray-400 mono mb-1">广域网继电器 GPIO-22</div>
+            <div id="relay-text" class="text-xl font-bold neon mono tracking-widest">ONLINE</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中栏 -->
+    <div class="col-span-6 flex flex-col">
+      <div class="glass rounded-xl flex flex-col overflow-hidden" style="height:calc(100vh - 90px)">
+        <div class="bg-gray-900/80 px-4 py-3 border-b border-gray-800 flex justify-between items-center shrink-0">
+          <span class="text-sm font-bold text-white mono">J.A.R.V.I.S 混合路由中枢</span>
+          <span class="text-xs px-2 py-1 bg-green-900/30 text-green-400 border border-green-800 rounded mono">Qwen2.5 7B Active</span>
+        </div>
+        <div id="chat-output" class="flex-1 overflow-y-auto p-5 space-y-5 bg-black/30">
+          <div class="flex gap-3">
+            <div class="w-8 h-8 rounded bg-[#00ffcc]/20 border border-[#00ffcc] flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div>
+            <div class="flex-1">
+              <div class="text-xs text-gray-500 mb-1 mono">SYSTEM_INIT | 00:00:00</div>
+              <div class="text-sm text-gray-300 leading-relaxed">您好，评委老师。我是 AirGap-Guardian 智能体 J.A.R.V.I.S。<br><br>请点击左侧【评委快速演示】按钮，或直接输入指令：<span class="neon mono">断网 / 恢复网络 / 开灯 / 关灯</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="p-3 bg-gray-900/50 border-t border-gray-800 shrink-0">
+          <div class="flex gap-2 items-center bg-black border border-gray-700 p-1.5 rounded-lg focus-within:border-[#00ffcc] transition-colors">
+            <span class="neon mono font-bold pl-2 text-sm">❯</span>
+            <input type="text" id="cmd-input" class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2 placeholder-gray-600 mono" placeholder="输入指令..." autocomplete="off">
+            <button id="btn-send" class="px-4 py-1.5 bg-[#00ffcc] text-black font-bold rounded hover:bg-white transition-colors text-sm mono">执行 (Enter)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右栏 -->
+    <div class="col-span-3 flex flex-col gap-4">
+      <div class="glass p-0 rounded-xl flex flex-col overflow-hidden" style="height:calc(100vh - 90px)">
+        <div class="bg-gray-900/80 px-4 py-2 border-b border-gray-800 flex justify-between items-center shrink-0">
+          <span class="mono text-xs text-gray-400">/var/log/syslog (Real-time)</span>
+          <span class="text-xs text-green-400 mono blink">● LIVE</span>
+        </div>
+        <div id="terminal-logs" class="flex-1 overflow-y-auto p-3 space-y-0.5 mono bg-black/50">
+          <div class="log-row text-gray-400">[SYSTEM] 边缘节点启动成功...</div>
+          <div class="log-row text-gray-400">[SYSTEM] 嗅探器线程就绪 (CPU/Temp/Net/SSH)</div>
+          <div class="log-row text-[#00ffcc]">[SNIFFER] 基线自适应校准完成</div>
+          <div class="log-row text-gray-400">[JARVIS] Qwen2.5 7B 模型加载完毕</div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ========== TAB 3: 物理拓扑 ========== -->
-<div id="tab-topology" class="tab-content p-6" style="min-height:calc(100vh - 56px)">
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold text-white mb-1">物理网络拓扑 <span class="neon">Physical Topology</span></h1>
-    <p class="text-gray-400 text-sm">边缘计算节点与 IoT 设备的实时连接状态可视化，展示物理气隙隔离层的完整数据流向。</p>
+<!-- ===== TAB 2: 威胁狩猎 ===== -->
+<div id="tab-hunting" class="tab-content p-6" style="min-height:calc(100vh - 56px)">
+  <h1 class="text-2xl font-bold text-white mb-6">威胁狩猎中心 <span class="neon">Threat Hunting</span></h1>
+  <div class="grid grid-cols-4 gap-4 mb-6">
+    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">今日拦截事件</div><div class="text-3xl font-bold neon mono">47</div></div>
+    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">物理熔断次数</div><div class="text-3xl font-bold text-orange-400 mono">3</div></div>
+    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">平均响应时延</div><div class="text-3xl font-bold text-blue-400 mono">0.8ms</div></div>
+    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">系统安全评分</div><div class="text-3xl font-bold neon mono">98/100</div></div>
   </div>
-
   <div class="grid grid-cols-3 gap-6">
-    <!-- 拓扑图 -->
-    <div class="col-span-2 glass rounded-xl p-6">
-      <div class="flex justify-between items-center mb-4">
-        <span class="text-sm font-bold text-white">网络拓扑图 (实时)</span>
-        <div class="flex gap-3 text-xs mono">
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-[#00ffcc] inline-block"></span>正常链路</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-red-500 inline-block"></span>已隔离</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-yellow-500 inline-block"></span>监控中</span>
-        </div>
+    <div class="col-span-2 glass rounded-xl overflow-hidden">
+      <div class="bg-gray-900/80 px-4 py-3 border-b border-gray-800"><span class="text-sm font-bold text-white">近期威胁事件</span></div>
+      <table class="w-full text-xs mono text-left">
+        <thead><tr class="text-gray-500 bg-gray-900/50"><th class="p-3">时间戳</th><th class="p-3">威胁类型</th><th class="p-3">来源</th><th class="p-3">严重程度</th><th class="p-3">状态</th></tr></thead>
+        <tbody>
+          <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33</td><td class="p-3 text-white">SSH 暴力破解</td><td class="p-3 text-gray-400">192.168.1.105</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-green-400">✓ 物理熔断</td></tr>
+          <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:18:07</td><td class="p-3 text-white">算力异常满载</td><td class="p-3 text-gray-400">PID:4821</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-green-400">✓ 物理熔断</td></tr>
+          <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">00:55:41</td><td class="p-3 text-white">异常出站流量</td><td class="p-3 text-gray-400">wlan0 → 外网</td><td class="p-3 text-orange-400 font-bold">HIGH</td><td class="p-3 text-green-400">✓ 流量截断</td></tr>
+          <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">00:42:19</td><td class="p-3 text-white">录音回放攻击</td><td class="p-3 text-gray-400">USB 音频设备</td><td class="p-3 text-orange-400 font-bold">HIGH</td><td class="p-3 text-red-400">✗ 口令失败</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="glass p-4 rounded-xl">
+      <h3 class="text-sm font-bold text-white mb-3">🤖 Qwen2.5 AI 威胁研判</h3>
+      <div class="space-y-3 text-xs text-gray-300">
+        <div class="bg-red-900/20 border border-red-800/50 p-3 rounded-lg"><div class="text-red-400 font-bold mb-1">高危预警</div>SSH 暴力破解频率过去 1 小时内增长 340%，疑似针对性渗透测试，建议立即更换端口。</div>
+        <div class="bg-yellow-900/20 border border-yellow-800/50 p-3 rounded-lg"><div class="text-yellow-400 font-bold mb-1">趋势分析</div>算力异常事件集中在 00:00-02:00 时段，与挖矿木马活跃时间窗口高度吻合。</div>
       </div>
+    </div>
+  </div>
+</div>
 
-      <svg viewBox="0 0 700 420" class="w-full" style="max-height:380px">
-        <!-- 连接线 -->
-        <line x1="350" y1="80" x2="350" y2="160" class="conn-line"/>
-        <line x1="350" y1="200" x2="180" y2="280" class="conn-line"/>
-        <line x1="350" y1="200" x2="350" y2="280" class="conn-line"/>
-        <line x1="350" y1="200" x2="520" y2="280" class="conn-line"/>
-        <line x1="180" y1="320" x2="80" y2="390" class="conn-line"/>
-        <line x1="180" y1="320" x2="180" y2="390" class="conn-line"/>
-        <line x1="350" y1="320" x2="350" y2="390" class="conn-line"/>
-        <line x1="520" y1="320" x2="460" y2="390" class="conn-line"/>
-        <line x1="520" y1="320" x2="580" y2="390" class="conn-line"/>
-        <!-- 互联网到继电器 (已隔离时变红) -->
-        <line id="wan-line" x1="350" y1="10" x2="350" y2="60" stroke="#00ffcc44" stroke-width="2" stroke-dasharray="6,4"/>
-
-        <!-- 互联网节点 -->
-        <g class="topology-node">
-          <rect x="290" y="0" width="120" height="36" rx="6" fill="#0a1a1a" stroke="#00ffcc44" stroke-width="1.5"/>
-          <text x="350" y="22" text-anchor="middle" fill="#00ffcc" font-size="11" font-family="monospace">🌐 互联网 (WAN)</text>
-        </g>
-
-        <!-- 继电器 (物理气隙层) -->
-        <g class="topology-node">
-          <rect x="265" y="60" width="170" height="44" rx="8" fill="#0a1a0a" stroke="#00ffcc" stroke-width="2"/>
-          <text x="350" y="78" text-anchor="middle" fill="#00ffcc" font-size="10" font-family="monospace">⚡ 继电器 GPIO-22</text>
-          <text x="350" y="96" text-anchor="middle" fill="#00cc88" font-size="9" font-family="monospace">物理气隙隔离层 (Air-Gap)</text>
-        </g>
-
-        <!-- 边缘计算核心 -->
-        <g class="topology-node">
-          <rect x="255" y="155" width="190" height="50" rx="8" fill="#001a2a" stroke="#0088ff" stroke-width="2"/>
-          <text x="350" y="175" text-anchor="middle" fill="#4499ff" font-size="11" font-family="monospace">🧠 边缘计算核心</text>
-          <text x="350" y="193" text-anchor="middle" fill="#6699aa" font-size="9" font-family="monospace">RPi 4B + Qwen2.5 7B (4060)</text>
-        </g>
-
-        <!-- 三个子节点 -->
-        <g class="topology-node">
-          <rect x="100" y="275" width="160" height="44" rx="6" fill="#0a0a1a" stroke="#8855ff" stroke-width="1.5"/>
-          <text x="180" y="293" text-anchor="middle" fill="#aa77ff" font-size="10" font-family="monospace">🔊 语音识别模块</text>
-          <text x="180" y="309" text-anchor="middle" fill="#665588" font-size="9" font-family="monospace">Vosk 离线唤醒引擎</text>
-        </g>
-        <g class="topology-node">
-          <rect x="265" y="275" width="170" height="44" rx="6" fill="#0a1a0a" stroke="#00aa55" stroke-width="1.5"/>
-          <text x="350" y="293" text-anchor="middle" fill="#00cc66" font-size="10" font-family="monospace">🔐 安全嗅探引擎</text>
-          <text x="350" y="309" text-anchor="middle" fill="#006633" font-size="9" font-family="monospace">CPU/Temp/Net/SSH 监测</text>
-        </g>
-        <g class="topology-node">
-          <rect x="440" y="275" width="160" height="44" rx="6" fill="#1a0a0a" stroke="#ff6600" stroke-width="1.5"/>
-          <text x="520" y="293" text-anchor="middle" fill="#ff8833" font-size="10" font-family="monospace">💡 IoT 控制总线</text>
-          <text x="520" y="309" text-anchor="middle" fill="#884422" font-size="9" font-family="monospace">Zigbee / GPIO 执行器</text>
-        </g>
-
-        <!-- 叶子节点 -->
-        <g><rect x="30" y="380" width="100" height="30" rx="4" fill="#0a0a0a" stroke="#665588" stroke-width="1"/><text x="80" y="399" text-anchor="middle" fill="#887799" font-size="9" font-family="monospace">USB 麦克风阵列</text></g>
-        <g><rect x="140" y="380" width="80" height="30" rx="4" fill="#0a0a0a" stroke="#665588" stroke-width="1"/><text x="180" y="399" text-anchor="middle" fill="#887799" font-size="9" font-family="monospace">音频处理器</text></g>
-        <g><rect x="300" y="380" width="100" height="30" rx="4" fill="#0a0a0a" stroke="#006633" stroke-width="1"/><text x="350" y="399" text-anchor="middle" fill="#008844" font-size="9" font-family="monospace">滑动窗口分析器</text></g>
-        <g><rect x="415" y="380" width="90" height="30" rx="4" fill="#0a0a0a" stroke="#884422" stroke-width="1"/><text x="460" y="399" text-anchor="middle" fill="#aa5533" font-size="9" font-family="monospace">智能灯 (RGB)</text></g>
-        <g><rect x="515" y="380" width="90" height="30" rx="4" fill="#0a0a0a" stroke="#884422" stroke-width="1"/><text x="560" y="399" text-anchor="middle" fill="#aa5533" font-size="9" font-family="monospace">继电器执行器</text></g>
+<!-- ===== TAB 3: 物理拓扑 ===== -->
+<div id="tab-topology" class="tab-content p-6" style="min-height:calc(100vh - 56px)">
+  <h1 class="text-2xl font-bold text-white mb-6">物理网络拓扑 <span class="neon">Physical Topology</span></h1>
+  <div class="grid grid-cols-3 gap-6">
+    <div class="col-span-2 glass rounded-xl p-6">
+      <svg viewBox="0 0 700 420" class="w-full" style="max-height:360px">
+        <line x1="350" y1="36" x2="350" y2="60" class="conn-line" id="wan-line"/>
+        <line x1="350" y1="104" x2="350" y2="155" class="conn-line"/>
+        <line x1="350" y1="205" x2="180" y2="275" class="conn-line"/>
+        <line x1="350" y1="205" x2="350" y2="275" class="conn-line"/>
+        <line x1="350" y1="205" x2="520" y2="275" class="conn-line"/>
+        <rect x="285" y="4" width="130" height="32" rx="6" fill="#0a1a1a" stroke="#00ffcc44" stroke-width="1.5"/>
+        <text x="350" y="24" text-anchor="middle" fill="#00ffcc" font-size="11" font-family="monospace">🌐 互联网 (WAN)</text>
+        <rect x="260" y="60" width="180" height="44" rx="8" fill="#0a1a0a" stroke="#00ffcc" stroke-width="2"/>
+        <text x="350" y="78" text-anchor="middle" fill="#00ffcc" font-size="10" font-family="monospace">⚡ 继电器 GPIO-22</text>
+        <rect x="250" y="155" width="200" height="50" rx="8" fill="#001a2a" stroke="#0088ff" stroke-width="2"/>
+        <text x="350" y="175" text-anchor="middle" fill="#4499ff" font-size="11" font-family="monospace">🧠 边缘计算核心</text>
+        <rect x="100" y="275" width="160" height="44" rx="6" fill="#0a0a1a" stroke="#8855ff" stroke-width="1.5"/>
+        <text x="180" y="293" text-anchor="middle" fill="#aa77ff" font-size="10" font-family="monospace">🔊 语音识别模块</text>
+        <rect x="265" y="275" width="170" height="44" rx="6" fill="#0a1a0a" stroke="#00aa55" stroke-width="1.5"/>
+        <text x="350" y="293" text-anchor="middle" fill="#00cc66" font-size="10" font-family="monospace">🔐 安全嗅探引擎</text>
+        <rect x="440" y="275" width="160" height="44" rx="6" fill="#1a0a0a" stroke="#ff6600" stroke-width="1.5"/>
+        <text x="520" y="293" text-anchor="middle" fill="#ff8833" font-size="10" font-family="monospace">💡 IoT 控制总线</text>
       </svg>
     </div>
-
-    <!-- 右侧：设备清单 -->
-    <div class="flex flex-col gap-4">
-      <div class="glass p-4 rounded-xl">
-        <h3 class="text-sm font-bold text-white mb-3">设备节点清单</h3>
-        <div class="space-y-2">
-          <div class="flex items-center justify-between p-2 bg-gray-900/50 rounded border border-gray-800 text-xs">
-            <div>
-              <div class="text-white font-bold">Raspberry Pi 4B</div>
-              <div class="text-gray-500 mono">192.168.1.100</div>
-            </div>
-            <span class="text-green-400 mono">● ONLINE</span>
-          </div>
-          <div class="flex items-center justify-between p-2 bg-gray-900/50 rounded border border-gray-800 text-xs">
-            <div>
-              <div class="text-white font-bold">RTX 4060 算力节点</div>
-              <div class="text-gray-500 mono">192.168.1.101</div>
-            </div>
-            <span class="text-green-400 mono">● ONLINE</span>
-          </div>
-          <div class="flex items-center justify-between p-2 bg-gray-900/50 rounded border border-gray-800 text-xs">
-            <div>
-              <div class="text-white font-bold">继电器模块 GPIO-22</div>
-              <div class="text-gray-500 mono">物理层设备</div>
-            </div>
-            <span id="topo-relay" class="text-green-400 mono">● CLOSED</span>
-          </div>
-          <div class="flex items-center justify-between p-2 bg-gray-900/50 rounded border border-gray-800 text-xs">
-            <div>
-              <div class="text-white font-bold">USB 麦克风阵列</div>
-              <div class="text-gray-500 mono">/dev/audio0</div>
-            </div>
-            <span class="text-green-400 mono">● ONLINE</span>
-          </div>
-          <div class="flex items-center justify-between p-2 bg-gray-900/50 rounded border border-gray-800 text-xs">
-            <div>
-              <div class="text-white font-bold">Zigbee 智能灯</div>
-              <div class="text-gray-500 mono">0x00158D0001</div>
-            </div>
-            <span class="text-yellow-400 mono">● STANDBY</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="glass p-4 rounded-xl flex-1">
-        <h3 class="text-sm font-bold text-white mb-3">数据流向说明</h3>
-        <div class="space-y-3 text-xs text-gray-400 leading-relaxed">
-          <div class="flex gap-2">
-            <span class="neon shrink-0">①</span>
-            <span>用户语音/文字指令 → 语音识别模块 → 意图路由中枢</span>
-          </div>
-          <div class="flex gap-2">
-            <span class="neon shrink-0">②</span>
-            <span>高频硬件指令 → 扁平化极速路由 (0.8ms) → GPIO 直接执行</span>
-          </div>
-          <div class="flex gap-2">
-            <span class="neon shrink-0">③</span>
-            <span>复杂推理任务 → Qwen2.5 7B → 结构化安全报告</span>
-          </div>
-          <div class="flex gap-2">
-            <span class="neon shrink-0">④</span>
-            <span>嗅探引擎异常告警 → 自动触发继电器断电 → Air-Gap 物理隔离</span>
-          </div>
-          <div class="flex gap-2">
-            <span class="neon shrink-0">⑤</span>
-            <span>恢复指令 → 动态挑战-应答验证 → 防录音回放 → 继电器重新吸合</span>
-          </div>
-        </div>
+    <div class="glass p-4 rounded-xl">
+      <h3 class="text-sm font-bold text-white mb-3">设备节点清单</h3>
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">Raspberry Pi 4B</div><div class="text-gray-500 mono">192.168.1.100</div></div><span class="text-green-400 mono">● ONLINE</span></div>
+        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">RTX 4060 算力节点</div><div class="text-gray-500 mono">192.168.1.101</div></div><span class="text-green-400 mono">● ONLINE</span></div>
+        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">继电器 GPIO-22</div><div class="text-gray-500 mono">物理层设备</div></div><span id="topo-relay" class="text-green-400 mono">● CLOSED</span></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ========== TAB 4: 安全审计日志 ========== -->
+<!-- ===== TAB 4: 安全审计日志 ===== -->
 <div id="tab-audit" class="tab-content p-6" style="min-height:calc(100vh - 56px)">
-  <div class="mb-6 flex justify-between items-end">
-    <div>
-      <h1 class="text-2xl font-bold text-white mb-1">安全审计日志 <span class="neon">Audit Trail</span></h1>
-      <p class="text-gray-400 text-sm">完整记录系统所有安全事件、指令执行与物理操作，满足等保2.0合规要求。</p>
-    </div>
-    <div class="flex gap-2">
-      <button class="px-3 py-1.5 text-xs mono border border-gray-700 text-gray-400 rounded hover:border-[#00ffcc] hover:text-[#00ffcc] transition-all">导出报告 (PDF)</button>
-      <button class="px-3 py-1.5 text-xs mono border border-gray-700 text-gray-400 rounded hover:border-[#00ffcc] hover:text-[#00ffcc] transition-all">清空日志</button>
-    </div>
-  </div>
-
-  <!-- 筛选栏 -->
-  <div class="glass p-3 rounded-xl mb-4 flex gap-4 items-center">
-    <span class="text-xs text-gray-400 mono">筛选：</span>
-    <button onclick="filterLogs('all',this)" class="px-3 py-1 text-xs mono rounded bg-[#00ffcc] text-black font-bold audit-filter">全部</button>
-    <button onclick="filterLogs('critical',this)" class="px-3 py-1 text-xs mono rounded border border-gray-700 text-gray-400 hover:border-red-500 hover:text-red-400 transition-all audit-filter">CRITICAL</button>
-    <button onclick="filterLogs('high',this)" class="px-3 py-1 text-xs mono rounded border border-gray-700 text-gray-400 hover:border-orange-500 hover:text-orange-400 transition-all audit-filter">HIGH</button>
-    <button onclick="filterLogs('medium',this)" class="px-3 py-1 text-xs mono rounded border border-gray-700 text-gray-400 hover:border-yellow-500 hover:text-yellow-400 transition-all audit-filter">MEDIUM</button>
-    <button onclick="filterLogs('system',this)" class="px-3 py-1 text-xs mono rounded border border-gray-700 text-gray-400 hover:border-blue-500 hover:text-blue-400 transition-all audit-filter">SYSTEM</button>
-    <span class="ml-auto text-xs text-gray-500 mono">共 <span id="log-count">24</span> 条记录</span>
-  </div>
-
-  <!-- 日志表格 -->
+  <h1 class="text-2xl font-bold text-white mb-6">安全审计日志 <span class="neon">Audit Trail</span></h1>
   <div class="glass rounded-xl overflow-hidden">
-    <table class="w-full text-xs mono" id="audit-table">
-      <thead>
-        <tr class="border-b border-gray-800 text-gray-500 bg-gray-900/50">
-          <th class="text-left p-3 w-28">时间戳</th>
-          <th class="text-left p-3 w-20">级别</th>
-          <th class="text-left p-3 w-32">模块</th>
-          <th class="text-left p-3">事件描述</th>
-          <th class="text-left p-3 w-24">操作人</th>
-          <th class="text-left p-3 w-20">结果</th>
-        </tr>
-      </thead>
-      <tbody id="audit-tbody">
-        <tr class="border-b border-gray-900 hover:bg-gray-900/30 audit-row" data-level="critical">
-          <td class="p-3 text-gray-400">01:24:33.821</td>
-          <td class="p-3"><span class="severity-critical font-bold">CRITICAL</span></td>
-          <td class="p-3 text-gray-300">SSH_SNIFFER</td>
-          <td class="p-3 text-white">检测到 SSH 暴力破解，60s内失败登录 5 次，来源 IP: 192.168.1.105</td>
-          <td class="p-3 text-gray-400">SYSTEM</td>
-          <td class="p-3 text-green-400">物理熔断</td>
-        </tr>
-        <tr class="border-b border-gray-900 hover:bg-gray-900/30 audit-row" data-level="critical">
-          <td class="p-3 text-gray-400">01:24:33.834</td>
-          <td class="p-3"><span class="severity-critical font-bold">CRITICAL</span></td>
-          <td class="p-3 text-gray-300">GPIO_CTRL</td>
-          <td class="p-3 text-white">触发 GPIO-22 继电器断电，广域网物理隔离，耗时 0.012ms</td>
-          <td class="p-3 text-gray-400">AUTO</td>
-          <td class="p-3 text-green-400">执行成功</td>
-        </tr>
-        <tr class="border-b border-gray-900 hover:bg-gray-900/30 audit-row" data-level="critical">
-          <td class="p-3 text-gray-400">01:18:07.443</td>
-          <td class="p-3"><span class="severity-critical font-bold">CRITICAL</span></td>
-          <td class="p-3 text-gray-300">CPU_SNIFFER</td>
-          <td class="p-3 text-white">CPU 占用率持续 10s 超过阈值 (99.9%)，疑似恶意挖矿进程 PID:4821</td>
-          <td class="p-3 text-gray-400">SYSTEM</td>
-          <td class="p-3 text-green-400">物理熔断</td>
-        </tr>
-        <tr class="border-b border-gray-900 hover:bg-gray-900/30 audit-row" data-level="high">
-          <td class="p-3 text-gray-400">01:02:15.209</td>
-          <td class="p-3"><span class="severity-high font-bold">HIGH</span></td>
-          <td class="p-3 text-gray-300">AUTH_MODULE</td>
-          <td class="p-3 text-white">检测到录音回放攻击，动态口令挑战已激活，15s 超时验证失败</td>
-          <td class="p-3 text-gray-400">UNKNOWN</td>
-          <td class="p-3 text-red-400">拒绝访问</td>
-        </tr>
-        <tr class="border-b border-gray-900 hover:bg-gray-900/30 audit-row" data-level="high">
-          <td class="p-3 text-gray-400">00:55:41.017</td>
-          <td class="p-3"><span class="severity-high font-bold">HIGH</span></td>
-          <td class="p-3 text-gray-300">NET_SNIFFER</td>
-          <td class="p-3 text-white">出站流量异常突增至 12.4MB/s，超过基线阈值 620 倍</td>
-          <td class="p-3 text-gray-400">SYSTEM</td>
-          <td class="p-3 text-green-400">流量截断</td>
-        </tr>
-        <tr class="border-b border-gray-900 hover:bg-gray-900/30 audit-row" data-level="system">
-          <td class="p-3 text-gray-400">00:48:22.100</td>
-          <td class="p-3"><span class="text-blue-400 font-bold">SYSTEM</span></td>
-          <td class="p-3 text-gray-300">JARVIS_ROUTER</td>
-          <td class="p-3 text-white">用户指令"断网"命中极速路由规则，跳过 LLM 推理，直接执行 GPIO 操作</td>
-          <td class="p-3 text-gray-400">Ethan</td>
-          <td class="p-3 text-green-400">执行成功</td>
-        </tr>
-        <tr class="border-b border-gray-900 hover:bg-gray-900/30 audit-row" data-level="system">
-          <td class="p-3 text-gray-400">00:48:55.332</td>
-          <td class="p-3"><span class="text-blue-400 font-bold">SYSTEM</span></td>
-          <td class="p-3 text-gray-300">AUTH_MODULE</td>
-          <td class="p-3 text-white">用户请求"恢复网络"，触发动态挑战-应答，生成口令: 847291，有效期 15s</td>
-          <td class="p-3 text-gray-400">Ethan</td>
-          <td class="p-3 text-green-400">验证通过</td>
-        </tr>
-        <tr class="border-b border-gray-900 hover:bg-gray-900/30 audit-row" data-level="medium">
-          <td class="p-3 text-gray-400">00:42:19.788</td>
-          <td class="p-3"><span class="severity-medium font-bold">MEDIUM</span></td>
-          <td class="p-3 text-gray-300">PORT_SCANNER</td>
-          <td class="p-3 text-white">检测到来自 10.0.0.23 的端口扫描行为，扫描端口范围 1-1024</td>
-          <td class="p-3 text-gray-400">SYSTEM</td>
-          <td class="p-3 text-yellow-400">监控中</td>
-        </tr>
-        <tr class="border-b border-gray-900 hover:bg-gray-900/30 audit-row" data-level="system">
-          <td class="p-3 text-gray-400">00:31:55.001</td>
-          <td class="p-3"><span class="text-blue-400 font-bold">SYSTEM</span></td>
-          <td class="p-3 text-gray-300">QWEN2.5</td>
-          <td class="p-3 text-white">大模型推理任务完成，生成安全事件分析报告，耗时 1240ms，tokens: 512</td>
-          <td class="p-3 text-gray-400">AUTO</td>
-          <td class="p-3 text-green-400">推理成功</td>
-        </tr>
-        <tr class="border-b border-gray-900 hover:bg-gray-900/30 audit-row" data-level="system">
-          <td class="p-3 text-gray-400">00:00:01.000</td>
-          <td class="p-3"><span class="text-blue-400 font-bold">SYSTEM</span></td>
-          <td class="p-3 text-gray-300">BOOT</td>
-          <td class="p-3 text-white">AirGap-Guardian v12.2 系统启动，所有模块初始化完成，边缘节点就绪</td>
-          <td class="p-3 text-gray-400">SYSTEM</td>
-          <td class="p-3 text-green-400">启动成功</td>
-        </tr>
+    <table class="w-full text-xs mono text-left">
+      <thead><tr class="text-gray-500 bg-gray-900/50"><th class="p-3">时间戳</th><th class="p-3">级别</th><th class="p-3">模块</th><th class="p-3">事件描述</th><th class="p-3">结果</th></tr></thead>
+      <tbody>
+        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33.821</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">SSH_SNIFFER</td><td class="p-3 text-white">检测到 SSH 暴力破解，60s内失败登录 5 次</td><td class="p-3 text-green-400">物理熔断</td></tr>
+        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33.834</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">GPIO_CTRL</td><td class="p-3 text-white">触发 GPIO-22 继电器断电，广域网物理隔离</td><td class="p-3 text-green-400">执行成功</td></tr>
+        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:18:07.443</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">CPU_SNIFFER</td><td class="p-3 text-white">CPU 占用率持续 10s 超过阈值 (99.9%)</td><td class="p-3 text-green-400">物理熔断</td></tr>
+        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">00:48:22.100</td><td class="p-3 text-blue-400 font-bold">SYSTEM</td><td class="p-3 text-gray-300">JARVIS_ROUTER</td><td class="p-3 text-white">用户指令"断网"命中极速路由规则，跳过 LLM 推理</td><td class="p-3 text-green-400">执行成功</td></tr>
       </tbody>
     </table>
   </div>
@@ -638,245 +232,194 @@
   // 时钟
   setInterval(()=>{ document.getElementById('clock').innerText = new Date().toTimeString().split(' ')[0]; },1000);
 
-  // Tab 切换
-  function switchTab(name,btn){
-    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    document.getElementById('tab-'+name).classList.add('active');
+  // Tab 切换逻辑 (核心修复)
+  function switchTab(name, btn){
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
     btn.classList.add('active');
   }
 
-  // 审计日志筛选
-  function filterLogs(level,btn){
-    document.querySelectorAll('.audit-filter').forEach(b=>{
-      b.className='px-3 py-1 text-xs mono rounded border border-gray-700 text-gray-400 audit-filter';
-    });
-    btn.className='px-3 py-1 text-xs mono rounded bg-[#00ffcc] text-black font-bold audit-filter';
-    let count=0;
-    document.querySelectorAll('.audit-row').forEach(r=>{
-      const show = level==='all' || r.dataset.level===level;
-      r.style.display = show ? '' : 'none';
-      if(show) count++;
-    });
-    document.getElementById('log-count').innerText=count;
-  }
-
   // 实时日志
-  function addLog(msg,type='info'){
-    const term=document.getElementById('terminal-logs');
-    const div=document.createElement('div');
-    const t=new Date().toTimeString().split(' ')[0];
-    const map={info:'severity-info',warn:'severity-medium',error:'severity-critical',success:'severity-low'};
-    div.className='log-row '+(map[type]||'severity-info');
-    div.innerText=`[${t}] ${msg}`;
+  function addLog(msg, type='info'){
+    const term = document.getElementById('terminal-logs');
+    const div = document.createElement('div');
+    const t = new Date().toTimeString().split(' ')[0];
+    const color = type==='error'?'text-red-400':type==='warn'?'text-yellow-400':type==='success'?'text-[#00ffcc]':'text-gray-400';
+    div.className = `log-row ${color}`;
+    div.innerText = `[${t}] ${msg}`;
     term.appendChild(div);
-    term.scrollTop=term.scrollHeight;
+    term.scrollTop = term.scrollHeight;
   }
 
   // 聊天消息
-  function appendChat(role,content,isTicket=false){
-    const box=document.getElementById('chat-output');
-    const wrap=document.createElement('div');
-    const t=new Date().toTimeString().split(' ')[0];
-    if(role==='user'){
-      wrap.className='flex gap-3 flex-row-reverse';
-      wrap.innerHTML=`<div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center shrink-0 text-white text-xs font-bold">U</div><div class="flex-1 text-right"><div class="text-xs text-gray-500 mb-1 mono">${t}</div><div class="inline-block bg-gray-800 text-white text-sm px-4 py-2 rounded-lg rounded-tr-none">${content}</div></div>`;
+  function appendChat(role, content, isTicket=false){
+    const box = document.getElementById('chat-output');
+    const wrap = document.createElement('div');
+    const t = new Date().toTimeString().split(' ')[0];
+    if(role === 'user'){
+      wrap.className = 'flex gap-3 flex-row-reverse';
+      wrap.innerHTML = `<div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center shrink-0 text-white text-xs font-bold">U</div><div class="flex-1 text-right"><div class="text-xs text-gray-500 mb-1 mono">${t}</div><div class="inline-block bg-gray-800 text-white text-sm px-4 py-2 rounded-lg rounded-tr-none">${content}</div></div>`;
     } else {
       let body = isTicket
-        ? `<div class="bg-red-900/20 border border-red-500/40 rounded-lg p-4 mt-1"><div class="text-red-400 font-bold text-sm mb-3 border-b border-red-500/30 pb-2 flex items-center gap-2">⚠ 离线安全威胁评估报告 (Incident Report)</div><div class="grid grid-cols-2 gap-3 mb-3 text-xs"><div><div class="text-gray-500">威胁等级</div><div class="text-red-400 mono font-bold">CRITICAL</div></div><div><div class="text-gray-500">隔离状态</div><div class="neon mono font-bold">AIR-GAP ISOLATED</div></div></div><div class="space-y-2 text-sm text-gray-300">${content}</div><div class="mt-3 pt-2 border-t border-red-500/20 text-xs text-gray-500">输入 <span class="neon mono">恢复网络</span> 解除物理熔断</div></div>`
+        ? `<div class="bg-red-900/20 border border-red-500/40 rounded-lg p-4 mt-1"><div class="text-red-400 font-bold text-sm mb-3 border-b border-red-500/30 pb-2">⚠ 离线安全威胁评估报告</div><div class="grid grid-cols-2 gap-3 mb-3 text-xs"><div><div class="text-gray-500">威胁等级</div><div class="text-red-400 mono font-bold">CRITICAL</div></div><div><div class="text-gray-500">隔离状态</div><div class="neon mono font-bold">AIR-GAP ISOLATED</div></div></div><div class="space-y-2 text-sm text-gray-300">${content}</div><div class="mt-3 pt-2 border-t border-red-500/20 text-xs text-gray-500">输入 <span class="neon mono">恢复网络</span> 解除物理熔断</div></div>`
         : `<div class="text-sm text-gray-300 leading-relaxed">${content}</div>`;
-      wrap.className='flex gap-3';
-      wrap.innerHTML=`<div class="w-8 h-8 rounded bg-[#00ffcc]/20 border border-[#00ffcc] flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div><div class="flex-1"><div class="text-xs text-gray-500 mb-1 mono">QWEN2.5_ROUTER | ${t}</div>${body}</div>`;
+      wrap.className = 'flex gap-3';
+      wrap.innerHTML = `<div class="w-8 h-8 rounded bg-[#00ffcc]/20 border border-[#00ffcc] flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div><div class="flex-1"><div class="text-xs text-gray-500 mb-1 mono">QWEN2.5_ROUTER | ${t}</div>${body}</div>`;
     }
     box.appendChild(wrap);
-    box.scrollTop=box.scrollHeight;
+    box.scrollTop = box.scrollHeight;
   }
 
   // 触发熔断 UI
-  let sysState={relay:'ONLINE',attacking:false,challenge:false};
+  let sysState = {relay:'ONLINE', attacking:false, challenge:false};
 
   function triggerLockdown(){
-    sysState.relay='SEVERED';
-    const box=document.getElementById('relay-box');
-    const txt=document.getElementById('relay-text');
-    box.className='border border-red-500 p-3 text-center rounded-lg bg-red-500/10 transition-all duration-500 blink';
-    txt.className='text-xl font-bold neon-red mono tracking-widest';
-    txt.innerText='SEVERED (熔断)';
-    document.getElementById('light-status').innerText='ON (警示)';
-    document.getElementById('light-status').className='text-sm font-bold text-red-400 mt-0.5';
-    document.getElementById('light-mode').innerText='红色熔断模式';
-    document.getElementById('sys-status').className='text-red-400';
-    document.getElementById('sys-status').innerText='● LOCKDOWN';
-    const tr=document.getElementById('topo-relay');
-    if(tr){ tr.innerText='● OPEN'; tr.className='text-red-400 mono'; }
+    sysState.relay = 'SEVERED';
+    const box = document.getElementById('relay-box');
+    const txt = document.getElementById('relay-text');
+    box.className = 'border border-red-500 p-3 text-center rounded-lg bg-red-500/10 transition-all duration-500 blink';
+    txt.className = 'text-xl font-bold neon-red mono tracking-widest';
+    txt.innerText = 'SEVERED (熔断)';
+    document.getElementById('sys-status').className = 'text-red-400';
+    document.getElementById('sys-status').innerText = '● LOCKDOWN';
     
-    // 拓扑图连线变红
+    const tr = document.getElementById('topo-relay');
+    if(tr){ tr.innerText = '● OPEN'; tr.className = 'text-red-400 mono'; }
+    
     const wanLine = document.getElementById('wan-line');
     if(wanLine) wanLine.setAttribute('stroke', '#ff4444');
     
-    addLog('[CRITICAL] GPIO-22 继电器断电！广域网物理隔离！','error');
+    addLog('[CRITICAL] GPIO-22 继电器断电！广域网物理隔离！', 'error');
   }
 
   // 重置系统
   function resetSystem(){
-    sysState={relay:'ONLINE',attacking:false,challenge:false};
-    const box=document.getElementById('relay-box');
-    const txt=document.getElementById('relay-text');
-    box.className='border border-[#00ffcc] p-3 text-center rounded-lg bg-[#00ffcc]/10 transition-all duration-500';
-    txt.className='text-xl font-bold neon mono tracking-widest';
-    txt.innerText='ONLINE';
-    document.getElementById('cpu-bar').className='bar-fill bg-[#00ffcc]';
-    document.getElementById('cpu-bar').style.width='12%';
-    document.getElementById('cpu-text').innerText='12.0%';
-    document.getElementById('cpu-text').className='neon';
-    document.getElementById('light-status').innerText='OFF';
-    document.getElementById('light-status').className='text-sm font-bold text-white mt-0.5';
-    document.getElementById('light-mode').innerText='普通';
-    document.getElementById('sys-status').className='text-green-400';
-    document.getElementById('sys-status').innerText='● SYSTEM ONLINE';
-    const tr=document.getElementById('topo-relay');
-    if(tr){ tr.innerText='● CLOSED'; tr.className='text-green-400 mono'; }
+    sysState = {relay:'ONLINE', attacking:false, challenge:false};
+    const box = document.getElementById('relay-box');
+    const txt = document.getElementById('relay-text');
+    box.className = 'border border-[#00ffcc] p-3 text-center rounded-lg bg-[#00ffcc]/10 transition-all duration-500';
+    txt.className = 'text-xl font-bold neon mono tracking-widest';
+    txt.innerText = 'ONLINE';
+    document.getElementById('cpu-bar').className = 'bar-fill bg-[#00ffcc]';
+    document.getElementById('cpu-bar').style.width = '12%';
+    document.getElementById('cpu-text').innerText = '12.0%';
+    document.getElementById('cpu-text').className = 'neon';
+    document.getElementById('sys-status').className = 'text-green-400';
+    document.getElementById('sys-status').innerText = '● SYSTEM ONLINE';
+    
+    const tr = document.getElementById('topo-relay');
+    if(tr){ tr.innerText = '● CLOSED'; tr.className = 'text-green-400 mono'; }
     
     const wanLine = document.getElementById('wan-line');
     if(wanLine) wanLine.setAttribute('stroke', '#00ffcc44');
 
-    appendChat('ai','✅ 系统已重置，所有模块恢复正常状态。广域网继电器重新吸合，可再次进行演示。');
-    addLog('[SYSTEM] 系统状态已重置','success');
+    appendChat('ai', '✅ 系统已重置，广域网继电器重新吸合，可再次进行演示。');
+    addLog('[SYSTEM] 系统状态已重置', 'success');
   }
 
   // 攻击模拟
   function simulateAttack(type){
-    if(sysState.relay==='SEVERED'){
-      appendChat('ai','⚠️ 系统已处于熔断状态。请先输入 <span class="neon mono">恢复网络</span> 或点击【重置系统状态】解除。');
+    if(sysState.relay === 'SEVERED'){
+      appendChat('ai', '⚠️ 系统已处于熔断状态。请先输入 <span class="neon mono">恢复网络</span> 或点击【重置系统状态】解除。');
       return;
     }
     if(sysState.attacking) return;
-    sysState.attacking=true;
+    sysState.attacking = true;
 
-    if(type==='cpu'){
-      appendChat('user','【评委模拟】执行算力满载攻击脚本...');
-      addLog('[嗅探器] 检测到 CPU 异常飙升...','warn');
-      let c=12,ti=0;
-      const iv=setInterval(()=>{
-        c=Math.min(c+18,99.9); ti++;
-        document.getElementById('cpu-text').innerText=c.toFixed(1)+'%';
-        document.getElementById('cpu-bar').style.width=c+'%';
-        document.getElementById('cpu-bar').className='bar-fill bg-red-500';
-        document.getElementById('cpu-text').className='text-red-400';
-        addLog(`[嗅探器 CPU] 高负载持续 (${c.toFixed(1)}%)，超过阈值！`,'warn');
-        if(ti>=5){ 
+    if(type === 'cpu'){
+      appendChat('user', '【评委模拟】执行算力满载攻击脚本...');
+      addLog('[嗅探器] 检测到 CPU 异常飙升...', 'warn');
+      let c = 12, ti = 0;
+      const iv = setInterval(()=>{
+        c = Math.min(c+18, 99.9); ti++;
+        document.getElementById('cpu-text').innerText = c.toFixed(1)+'%';
+        document.getElementById('cpu-bar').style.width = c+'%';
+        document.getElementById('cpu-bar').className = 'bar-fill bg-red-500';
+        document.getElementById('cpu-text').className = 'text-red-400';
+        addLog(`[嗅探器 CPU] 高负载持续 (${c.toFixed(1)}%)，超过阈值！`, 'warn');
+        if(ti >= 5){ 
           clearInterval(iv); triggerLockdown();
           setTimeout(()=>{
-            appendChat('ai',
-              `<div><span class="text-gray-400">拦截原因：</span>CPU 持续满载 (99.9%)，持续时长超过 10s 阈值</div>
-               <div class="mt-2"><span class="text-gray-400">AI 分析：</span>疑似恶意挖矿脚本注入或勒索软件加密行为，进程 PID:4821</div>
-               <div class="mt-2"><span class="text-gray-400">排查建议：</span>立即检查本地进程列表，排查未知的高耗能脚本；检查散热系统是否正常。</div>`, true);
-            sysState.attacking=false;
+            appendChat('ai', `<div><span class="text-gray-400">拦截原因：</span>CPU 持续满载 (99.9%)，时长超阈值</div><div class="mt-2"><span class="text-gray-400">AI 分析：</span>疑似恶意挖矿脚本注入，PID:4821</div>`, true);
+            sysState.attacking = false;
           }, 800);
         }
       }, 300);
     }
 
-    if(type==='ssh'){
-      appendChat('user','【评委模拟】执行 SSH 字典暴力破解...');
-      let count=0;
-      const iv=setInterval(()=>{
+    if(type === 'ssh'){
+      appendChat('user', '【评委模拟】执行 SSH 字典暴力破解...');
+      let count = 0;
+      const iv = setInterval(()=>{
         count++;
-        addLog(`[嗅探器 SSH] 检测到失败登录，来源 IP: 192.168.1.105，累计 ${count} 次`,'warn');
-        if(count>=5){
+        addLog(`[嗅探器 SSH] 检测到失败登录，来源 IP: 192.168.1.105，累计 ${count} 次`, 'warn');
+        if(count >= 5){
           clearInterval(iv); triggerLockdown();
           setTimeout(()=>{
-            appendChat('ai',
-              `<div><span class="text-gray-400">拦截原因：</span>非法入侵嗅探 (60秒内检测到 5 次 SSH 暴力破解尝试)</div>
-               <div class="mt-2"><span class="text-gray-400">AI 分析：</span>系统正遭受来自非白名单 IP 的高频 SSH 字典攻击，存在极高的提权风险。</div>
-               <div class="mt-2"><span class="text-gray-400">排查建议：</span>检查 /var/log/auth.log 溯源攻击 IP；建议更改 SSH 默认端口并禁用密码登录。</div>`, true);
-            sysState.attacking=false;
+            appendChat('ai', `<div><span class="text-gray-400">拦截原因：</span>非法入侵嗅探 (60秒内 5 次尝试)</div><div class="mt-2"><span class="text-gray-400">AI 分析：</span>遭受高频 SSH 字典攻击，存在提权风险。</div>`, true);
+            sysState.attacking = false;
           }, 800);
         }
       }, 250);
     }
 
-    if(type==='net'){
-      appendChat('user','断网');
-      addLog('[ROUTER] 极速指令命中: net_cut (耗时: 0.012ms)','success');
+    if(type === 'net'){
+      appendChat('user', '断网');
+      addLog('[ROUTER] 极速指令命中: net_cut (耗时: 0.012ms)', 'success');
       triggerLockdown();
-      appendChat('ai','✅ 物理熔断已触发，已切入纯局域网绝对隐私模式。');
-      sysState.attacking=false;
+      appendChat('ai', '✅ 物理熔断已触发，已切入纯局域网绝对隐私模式。');
+      sysState.attacking = false;
     }
   }
 
   // 输入框处理
-  document.getElementById('btn-send').addEventListener('click',()=>{
-    const input=document.getElementById('cmd-input');
-    const text=input.value.trim();
+  document.getElementById('btn-send').addEventListener('click', ()=>{
+    const input = document.getElementById('cmd-input');
+    const text = input.value.trim();
     if(!text) return;
-    input.value='';
-    appendChat('user',text);
+    input.value = '';
+    appendChat('user', text);
 
-    if(text==='断网'){
-      simulateAttack('net');
-    }
-    else if(text==='恢复网络'){
-      if(sysState.relay==='ONLINE'){
-        appendChat('ai','当前网络已处于连接状态，无需恢复。');
-        return;
-      }
-      addLog('[ROUTER] 极速指令命中: net_restore (耗时: 0.015ms)','success');
-      addLog('[AUTH] 触发动态口令挑战','warn');
-      appendChat('ai','⚠️ 检测到高危提权指令。防录音回放机制已激活。<br>请在15秒内复述动态口令：<span class="text-yellow-400 font-bold tracking-widest text-lg ml-2">847291</span>');
-      sysState.challenge=true;
+    if(text === '断网') simulateAttack('net');
+    else if(text === '恢复网络'){
+      if(sysState.relay === 'ONLINE'){ appendChat('ai', '当前网络已处于连接状态。'); return; }
+      addLog('[ROUTER] 极速指令命中: net_restore', 'success');
+      addLog('[AUTH] 触发动态口令挑战', 'warn');
+      appendChat('ai', '⚠️ 防录音回放机制已激活。<br>请在15秒内复述动态口令：<span class="text-yellow-400 font-bold tracking-widest text-lg ml-2">847291</span>');
+      sysState.challenge = true;
     }
     else if(sysState.challenge && text.includes('847291')){
-      sysState.challenge=false;
-      addLog('[AUTH] 动态口令验证通过','success');
+      sysState.challenge = false;
+      addLog('[AUTH] 动态口令验证通过', 'success');
       resetSystem();
     }
-    else if(text==='开灯'){
-      document.getElementById('light-status').innerText='ON';
-      document.getElementById('light-status').className='text-sm font-bold text-white mt-0.5';
-      appendChat('ai','💡 照明已开启。');
-      addLog('[GPIO] 智能灯状态变更为: ON','success');
-    }
-    else if(text==='关灯'){
-      document.getElementById('light-status').innerText='OFF';
-      document.getElementById('light-status').className='text-sm font-bold text-gray-500 mt-0.5';
-      appendChat('ai','💡 照明已关闭。');
-      addLog('[GPIO] 智能灯状态变更为: OFF','success');
-    }
     else {
-      addLog('[ROUTER] 极速路由未命中，转发至 Qwen2.5 算力中枢...','info');
-      document.getElementById('router-mode').innerText='大模型推理模式';
-      document.getElementById('router-mode').className='text-xs px-2 py-1 bg-purple-900/30 text-purple-400 border border-purple-800 rounded mono';
-      
+      addLog('[ROUTER] 极速路由未命中，转发至 Qwen2.5...', 'info');
       setTimeout(()=>{
-        appendChat('ai',`了解，Ethan。关于“${text}”，作为一个运行在边缘计算核心的智能体，我已经记录了您的需求。在当前的物理气隙隔离状态下，系统运行一切正常。`);
-        addLog('[JARVIS] 大模型推理完成 (耗时: 1240ms)','success');
-        
-        setTimeout(()=>{
-          document.getElementById('router-mode').innerText='极速路由模式';
-          document.getElementById('router-mode').className='text-xs px-2 py-1 bg-blue-900/30 text-blue-400 border border-blue-800 rounded mono';
-        }, 2000);
+        appendChat('ai', `了解，Ethan。关于“${text}”，我已经记录了您的需求。系统运行一切正常。`);
+        addLog('[JARVIS] 大模型推理完成 (耗时: 1240ms)', 'success');
       }, 1200);
     }
   });
 
-  document.getElementById('cmd-input').addEventListener('keypress',(e)=>{
-    if(e.key==='Enter') document.getElementById('btn-send').click();
+  document.getElementById('cmd-input').addEventListener('keypress', (e)=>{
+    if(e.key === 'Enter') document.getElementById('btn-send').click();
   });
 
   // 随机波动数据模拟
   setInterval(()=>{
-    if(sysState.attacking || sysState.relay==='SEVERED') return;
-    const cpu=(Math.random()*8+8).toFixed(1);
-    const temp=(Math.random()*2+42).toFixed(1);
-    const net=(Math.random()*0.05).toFixed(3);
+    if(sysState.attacking || sysState.relay === 'SEVERED') return;
+    const cpu = (Math.random()*8+8).toFixed(1);
+    const temp = (Math.random()*2+42).toFixed(1);
+    const net = (Math.random()*0.05).toFixed(3);
     
-    document.getElementById('cpu-text').innerText=cpu+'%';
-    document.getElementById('cpu-bar').style.width=cpu+'%';
-    document.getElementById('temp-text').innerText=temp+'°C';
-    document.getElementById('temp-bar').style.width=(temp/100*100)+'%';
-    document.getElementById('net-text').innerText=net+'MB/s';
-    
-    if(Math.random()>0.85) addLog(`[SNIFFER] 流量基线自适应调整: ${net} MB/s`,'info');
+    document.getElementById('cpu-text').innerText = cpu+'%';
+    document.getElementById('cpu-bar').style.width = cpu+'%';
+    document.getElementById('temp-text').innerText = temp+'°C';
+    document.getElementById('temp-bar').style.width = (temp/100*100)+'%';
+    document.getElementById('net-text').innerText = net+'MB/s';
   }, 2500);
 </script>
+</body>
+</html>
