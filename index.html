@@ -25,6 +25,8 @@
     .log-row { padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:11px; }
     .blink { animation:blink 1s infinite; }
     @keyframes blink { 50%{opacity:0;} }
+    .new-row { animation: highlight 2s ease-out; }
+    @keyframes highlight { 0% { background-color: rgba(255, 68, 68, 0.2); } 100% { background-color: transparent; } }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -152,17 +154,17 @@
 <div id="tab-hunting" class="tab-content p-6" style="min-height:calc(100vh - 56px)">
   <h1 class="text-2xl font-bold text-white mb-6">威胁狩猎中心 <span class="neon">Threat Hunting</span></h1>
   <div class="grid grid-cols-4 gap-4 mb-6">
-    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">今日拦截事件</div><div class="text-3xl font-bold neon mono">47</div></div>
-    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">物理熔断次数</div><div class="text-3xl font-bold text-orange-400 mono">3</div></div>
+    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">今日拦截事件</div><div class="text-3xl font-bold neon mono" id="stat-intercepts">47</div></div>
+    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">物理熔断次数</div><div class="text-3xl font-bold text-orange-400 mono" id="stat-lockdowns">3</div></div>
     <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">平均响应时延</div><div class="text-3xl font-bold text-blue-400 mono">< 5ms</div></div>
     <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">系统安全评分</div><div class="text-3xl font-bold neon mono">98/100</div></div>
   </div>
   <div class="grid grid-cols-3 gap-6">
     <div class="col-span-2 glass rounded-xl overflow-hidden">
-      <div class="bg-gray-900/80 px-4 py-3 border-b border-gray-800"><span class="text-sm font-bold text-white">近期威胁事件</span></div>
+      <div class="bg-gray-900/80 px-4 py-3 border-b border-gray-800"><span class="text-sm font-bold text-white">近期威胁事件 (实时同步)</span></div>
       <table class="w-full text-xs mono text-left">
         <thead><tr class="text-gray-500 bg-gray-900/50"><th class="p-3">时间戳</th><th class="p-3">威胁类型</th><th class="p-3">来源</th><th class="p-3">严重程度</th><th class="p-3">状态</th></tr></thead>
-        <tbody>
+        <tbody id="threat-tbody">
           <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33</td><td class="p-3 text-white">SSH 暴力破解</td><td class="p-3 text-gray-400">192.168.1.105</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-green-400">✓ 物理熔断</td></tr>
           <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:18:07</td><td class="p-3 text-white">算力异常满载</td><td class="p-3 text-gray-400">PID:4821</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-green-400">✓ 物理熔断</td></tr>
           <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">00:55:41</td><td class="p-3 text-white">异常出站流量</td><td class="p-3 text-gray-400">wlan0 → 外网</td><td class="p-3 text-orange-400 font-bold">HIGH</td><td class="p-3 text-green-400">✓ 流量截断</td></tr>
@@ -227,7 +229,7 @@
   <div class="glass rounded-xl overflow-hidden">
     <table class="w-full text-xs mono text-left">
       <thead><tr class="text-gray-500 bg-gray-900/50"><th class="p-3">时间戳</th><th class="p-3">级别</th><th class="p-3">模块</th><th class="p-3">事件描述</th><th class="p-3">结果</th></tr></thead>
-      <tbody>
+      <tbody id="audit-tbody">
         <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33.821</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">SSH_SNIFFER</td><td class="p-3 text-white">检测到 SSH 暴力破解，60s内失败登录 5 次</td><td class="p-3 text-green-400">物理熔断</td></tr>
         <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33.834</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">AIRGAP_CTRL</td><td class="p-3 text-white">触发硬件级继电器断电，广域网物理隔离 (< 5ms)</td><td class="p-3 text-green-400">执行成功</td></tr>
         <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:18:07.443</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">CPU_SNIFFER</td><td class="p-3 text-white">CPU 占用率持续 10s 超过阈值 (99.9%)</td><td class="p-3 text-green-400">物理熔断</td></tr>
@@ -249,7 +251,7 @@
     btn.classList.add('active');
   }
 
-  // 实时日志
+  // 实时终端日志
   function addLog(msg, type='info'){
     const term = document.getElementById('terminal-logs');
     const div = document.createElement('div');
@@ -259,6 +261,53 @@
     div.innerText = `[${t}] ${msg}`;
     term.appendChild(div);
     term.scrollTop = term.scrollHeight;
+  }
+
+  // 动态添加威胁事件 (Tab 2)
+  function addThreatEvent(type, source, severity, status, statusColor) {
+    const tbody = document.getElementById('threat-tbody');
+    const tr = document.createElement('tr');
+    tr.className = 'border-b border-gray-900 new-row'; 
+    const t = new Date().toTimeString().split(' ')[0];
+    let sevHtml = severity === 'CRITICAL' ? `<span class="text-red-400 font-bold">CRITICAL</span>` : 
+                  severity === 'HIGH' ? `<span class="text-orange-400 font-bold">HIGH</span>` : 
+                  `<span class="text-yellow-400 font-bold">${severity}</span>`;
+    
+    tr.innerHTML = `
+      <td class="p-3 text-gray-400">${t}</td>
+      <td class="p-3 text-white">${type}</td>
+      <td class="p-3 text-gray-400">${source}</td>
+      <td class="p-3">${sevHtml}</td>
+      <td class="p-3 ${statusColor}">${status}</td>
+    `;
+    tbody.insertBefore(tr, tbody.firstChild);
+    
+    // 更新统计数据
+    const countEl = document.getElementById('stat-intercepts');
+    countEl.innerText = parseInt(countEl.innerText) + 1;
+  }
+
+  // 动态添加审计日志 (Tab 4)
+  function addAuditEvent(level, module, desc, result, resultColor) {
+    const tbody = document.getElementById('audit-tbody');
+    const tr = document.createElement('tr');
+    tr.className = 'border-b border-gray-900 new-row';
+    const date = new Date();
+    const t = date.toTimeString().split(' ')[0] + '.' + String(date.getMilliseconds()).padStart(3, '0');
+    
+    let levelHtml = level === 'CRITICAL' ? `<span class="text-red-400 font-bold">CRITICAL</span>` : 
+                    level === 'SYSTEM' ? `<span class="text-blue-400 font-bold">SYSTEM</span>` :
+                    level === 'HIGH' ? `<span class="text-orange-400 font-bold">HIGH</span>` :
+                    `<span class="text-yellow-400 font-bold">${level}</span>`;
+
+    tr.innerHTML = `
+      <td class="p-3 text-gray-400">${t}</td>
+      <td class="p-3">${levelHtml}</td>
+      <td class="p-3 text-gray-300">${module}</td>
+      <td class="p-3 text-white">${desc}</td>
+      <td class="p-3 ${resultColor}">${result}</td>
+    `;
+    tbody.insertBefore(tr, tbody.firstChild);
   }
 
   // 聊天消息
@@ -300,6 +349,11 @@
     if(wanLine) wanLine.setAttribute('stroke', '#ff4444');
     
     addLog('[CRITICAL] 硬件级物理继电器断电！广域网(WAN)物理隔离！', 'error');
+
+    // 更新熔断统计和审计日志
+    const countEl = document.getElementById('stat-lockdowns');
+    countEl.innerText = parseInt(countEl.innerText) + 1;
+    addAuditEvent('CRITICAL', 'AIRGAP_CTRL', '触发硬件级继电器断电，广域网物理隔离 (< 5ms)', '执行成功', 'text-green-400');
   }
 
   // 重置系统
@@ -332,6 +386,7 @@
 
     appendChat('ai', '✅ 系统已重置，广域网继电器重新吸合，可再次进行演示。');
     addLog('[SYSTEM] 系统状态已重置', 'success');
+    addAuditEvent('SYSTEM', 'AIRGAP_CTRL', '系统重置，广域网继电器重新闭合', '执行成功', 'text-green-400');
   }
 
   // 攻击模拟
@@ -356,7 +411,10 @@
         document.getElementById('cpu-text').className = 'text-red-400 font-bold';
         addLog(`[嗅探器 CPU] 高负载持续 (${c.toFixed(1)}%)，超过阈值！`, 'warn');
         if(ti >= 5){ 
-          clearInterval(iv); triggerLockdown();
+          clearInterval(iv); 
+          addThreatEvent('算力异常满载', 'PID:4821', 'CRITICAL', '✓ 物理熔断', 'text-green-400');
+          addAuditEvent('CRITICAL', 'CPU_SNIFFER', 'CPU 占用率持续 10s 超过阈值 (99.9%)', '物理熔断', 'text-green-400');
+          triggerLockdown();
           setTimeout(()=>{
             appendChat('ai', `<div><span class="text-gray-400">拦截原因：</span>CPU 持续满载 (99.9%)，时长超阈值</div><div class="mt-2"><span class="text-gray-400">AI 分析：</span>疑似恶意挖矿脚本注入，PID:4821</div>`, true);
             sysState.attacking = false;
@@ -373,7 +431,10 @@
         count++;
         addLog(`[嗅探器 SSH] 检测到失败登录，来源 IP: 192.168.1.105，累计 ${count} 次`, 'warn');
         if(count >= 5){
-          clearInterval(iv); triggerLockdown();
+          clearInterval(iv); 
+          addThreatEvent('SSH 暴力破解', '192.168.1.105', 'CRITICAL', '✓ 物理熔断', 'text-green-400');
+          addAuditEvent('CRITICAL', 'SSH_SNIFFER', '检测到 SSH 暴力破解，60s内失败登录 5 次', '物理熔断', 'text-green-400');
+          triggerLockdown();
           setTimeout(()=>{
             appendChat('ai', `<div><span class="text-gray-400">拦截原因：</span>非法入侵嗅探 (60秒内 5 次尝试)</div><div class="mt-2"><span class="text-gray-400">AI 分析：</span>遭受高频 SSH 字典攻击，存在提权风险。</div>`, true);
             sysState.attacking = false;
@@ -396,7 +457,10 @@
         document.getElementById('net-text').className = 'text-red-400 font-bold';
         addLog(`[嗅探器 NET] 异常流量持续 (${netVal.toFixed(1)}MB/s)，远超基线！`, 'warn');
         if(ti >= 5){
-          clearInterval(iv); triggerLockdown();
+          clearInterval(iv); 
+          addThreatEvent('异常出站流量', 'wlan0 → 外网', 'HIGH', '✓ 流量截断', 'text-green-400');
+          addAuditEvent('HIGH', 'NET_SNIFFER', '出站流量异常突增，超过基线阈值 620 倍', '流量截断', 'text-green-400');
+          triggerLockdown();
           setTimeout(()=>{
             appendChat('ai', `<div><span class="text-gray-400">拦截原因：</span>网络流量激增 (UDP Flood)</div><div class="mt-2"><span class="text-gray-400">AI 分析：</span>检测到向未知 IP 的高频大数据包发送，疑似 DDoS 攻击或数据外发窃取。</div><div class="mt-2"><span class="text-gray-400">排查建议：</span>检查网络连接状态，拦截对应恶意 IP。</div>`, true);
             sysState.attacking = false;
@@ -409,6 +473,8 @@
     if(type === 'net'){
       appendChat('user', '断网');
       addLog('[ROUTER] 极速指令命中: net_cut (耗时: 0.012ms)', 'success');
+      addThreatEvent('用户指令断网', '本地控制台', 'HIGH', '✓ 物理熔断', 'text-green-400');
+      addAuditEvent('SYSTEM', 'JARVIS_ROUTER', '用户指令"断网"命中极速路由规则，跳过云端依赖', '执行成功', 'text-green-400');
       triggerLockdown();
       appendChat('ai', '✅ 物理熔断已触发，已切入纯局域网绝对隐私模式。');
       sysState.attacking = false;
@@ -434,6 +500,7 @@
     else if(sysState.challenge && text.includes('847291')){
       sysState.challenge = false;
       addLog('[AUTH] 动态口令验证通过', 'success');
+      addAuditEvent('SYSTEM', 'AUTH_MODULE', '动态口令验证通过，解除物理隔离', '验证通过', 'text-green-400');
       resetSystem();
     }
     else {
