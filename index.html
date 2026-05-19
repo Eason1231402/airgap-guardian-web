@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AirGap-Guardian | 边缘计算物理气隙安全智能体</title>
+  <title>J.A.R.V.I.S Edge System | 边缘可信中控系统</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { background:#050a0a; color:#e5e7eb; font-family: sans-serif; }
@@ -33,8 +33,8 @@
 <header class="h-14 border-b border-gray-800 bg-black/80 backdrop-blur flex items-center justify-between px-6 sticky top-0 z-50">
   <div class="flex items-center gap-3">
     <div class="w-2 h-2 rounded-full bg-[#00ffcc] blink"></div>
-    <span class="mono font-bold text-lg text-white">AirGap<span class="neon">-Guardian</span></span>
-    <span class="text-xs text-gray-600 border border-gray-800 px-2 py-0.5 rounded mono ml-1">v12.2 · IEEE</span>
+    <span class="mono font-bold text-lg text-white">J.A.R.V.I.S <span class="neon">Edge System</span></span>
+    <span class="text-xs text-gray-600 border border-gray-800 px-2 py-0.5 rounded mono ml-1">IEEE GAIIS2026</span>
   </div>
   <nav class="flex">
     <button class="tab-btn active mono" onclick="switchTab('monitor',this)">全景监控台</button>
@@ -97,7 +97,7 @@
         <div class="mt-4 pt-3 border-t border-gray-800">
           <h2 class="mono text-xs text-gray-400 mb-2">/// 物理气隙状态 (Air-Gap)</h2>
           <div id="relay-box" class="border border-[#00ffcc] p-3 text-center rounded-lg bg-[#00ffcc]/10 transition-all duration-500">
-            <div class="text-xs text-gray-400 mono mb-1">广域网继电器 GPIO-22</div>
+            <div class="text-xs text-gray-400 mono mb-1">广域网物理继电器</div>
             <div id="relay-text" class="text-xl font-bold neon mono tracking-widest">ONLINE</div>
           </div>
         </div>
@@ -116,7 +116,7 @@
             <div class="w-8 h-8 rounded bg-[#00ffcc]/20 border border-[#00ffcc] flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div>
             <div class="flex-1">
               <div class="text-xs text-gray-500 mb-1 mono">SYSTEM_INIT | 00:00:00</div>
-              <div class="text-sm text-gray-300 leading-relaxed">您好，评委老师。我是 AirGap-Guardian 智能体 J.A.R.V.I.S。<br><br>请点击左侧【评委快速演示】按钮，或直接输入指令：<span class="neon mono">断网 / 恢复网络 / 开灯 / 关灯</span></div>
+              <div class="text-sm text-gray-300 leading-relaxed">您好，评委老师。我是 J.A.R.V.I.S 边缘可信中控智能体。<br><br>本系统采用 <strong class="text-white">双路径异构拓扑 (Dual-Path Heterogeneous Topology) + 大模型深度推理</strong> 的混合架构。通过硬件级物理气隙隔离，实现 <strong class="text-white">确定性隐私 (Deterministic Privacy)</strong> 与零数据泄露。<br><br>请点击左侧【评委快速演示】按钮，或直接输入指令：<span class="neon mono">断网 / 恢复网络 / 开灯 / 关灯</span></div>
             </div>
           </div>
         </div>
@@ -154,7 +154,7 @@
   <div class="grid grid-cols-4 gap-4 mb-6">
     <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">今日拦截事件</div><div class="text-3xl font-bold neon mono">47</div></div>
     <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">物理熔断次数</div><div class="text-3xl font-bold text-orange-400 mono">3</div></div>
-    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">平均响应时延</div><div class="text-3xl font-bold text-blue-400 mono">0.8ms</div></div>
+    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">平均响应时延</div><div class="text-3xl font-bold text-blue-400 mono">< 5ms</div></div>
     <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">系统安全评分</div><div class="text-3xl font-bold neon mono">98/100</div></div>
   </div>
   <div class="grid grid-cols-3 gap-6">
@@ -194,23 +194,28 @@
         <rect x="285" y="4" width="130" height="32" rx="6" fill="#0a1a1a" stroke="#00ffcc44" stroke-width="1.5"/>
         <text x="350" y="24" text-anchor="middle" fill="#00ffcc" font-size="11" font-family="monospace">🌐 互联网 (WAN)</text>
         <rect x="260" y="60" width="180" height="44" rx="8" fill="#0a1a0a" stroke="#00ffcc" stroke-width="2"/>
-        <text x="350" y="78" text-anchor="middle" fill="#00ffcc" font-size="10" font-family="monospace">⚡ 继电器 GPIO-22</text>
+        <text x="350" y="78" text-anchor="middle" fill="#00ffcc" font-size="10" font-family="monospace">⚡ 硬件级气隙继电器</text>
         <rect x="250" y="155" width="200" height="50" rx="8" fill="#001a2a" stroke="#0088ff" stroke-width="2"/>
         <text x="350" y="175" text-anchor="middle" fill="#4499ff" font-size="11" font-family="monospace">🧠 边缘计算核心</text>
+        <text x="350" y="193" text-anchor="middle" fill="#6699aa" font-size="9" font-family="monospace">Raspberry Pi 5 + Qwen2.5</text>
         <rect x="100" y="275" width="160" height="44" rx="6" fill="#0a0a1a" stroke="#8855ff" stroke-width="1.5"/>
-        <text x="180" y="293" text-anchor="middle" fill="#aa77ff" font-size="10" font-family="monospace">🔊 语音识别模块</text>
+        <text x="180" y="293" text-anchor="middle" fill="#aa77ff" font-size="10" font-family="monospace">🔊 离线声学模型</text>
+        <text x="180" y="309" text-anchor="middle" fill="#665588" font-size="9" font-family="monospace">Kaldi / Vosk</text>
         <rect x="265" y="275" width="170" height="44" rx="6" fill="#0a1a0a" stroke="#00aa55" stroke-width="1.5"/>
         <text x="350" y="293" text-anchor="middle" fill="#00cc66" font-size="10" font-family="monospace">🔐 安全嗅探引擎</text>
+        <text x="350" y="309" text-anchor="middle" fill="#006633" font-size="9" font-family="monospace">CPU/Temp/Net/SSH 监测</text>
         <rect x="440" y="275" width="160" height="44" rx="6" fill="#1a0a0a" stroke="#ff6600" stroke-width="1.5"/>
-        <text x="520" y="293" text-anchor="middle" fill="#ff8833" font-size="10" font-family="monospace">💡 IoT 控制总线</text>
+        <text x="520" y="293" text-anchor="middle" fill="#ff8833" font-size="10" font-family="monospace">💡 局域网控制总线</text>
+        <text x="520" y="309" text-anchor="middle" fill="#884422" font-size="9" font-family="monospace">Zigbee CC2652P</text>
       </svg>
     </div>
     <div class="glass p-4 rounded-xl">
       <h3 class="text-sm font-bold text-white mb-3">设备节点清单</h3>
       <div class="space-y-2 text-xs">
-        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">Raspberry Pi 4B</div><div class="text-gray-500 mono">192.168.1.100</div></div><span class="text-green-400 mono">● ONLINE</span></div>
-        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">RTX 4060 算力节点</div><div class="text-gray-500 mono">192.168.1.101</div></div><span class="text-green-400 mono">● ONLINE</span></div>
-        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">继电器 GPIO-22</div><div class="text-gray-500 mono">物理层设备</div></div><span id="topo-relay" class="text-green-400 mono">● CLOSED</span></div>
+        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">Raspberry Pi 5</div><div class="text-gray-500 mono">Edge Computing Node</div></div><span class="text-green-400 mono">● ONLINE</span></div>
+        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">RTX 4060 算力节点</div><div class="text-gray-500 mono">NVLink Architecture</div></div><span class="text-green-400 mono">● ONLINE</span></div>
+        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">硬件级气隙继电器</div><div class="text-gray-500 mono">WAN Power Control</div></div><span id="topo-relay" class="text-green-400 mono">● CLOSED</span></div>
+        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">Zigbee 协调器</div><div class="text-gray-500 mono">CC2652P Local LAN</div></div><span class="text-green-400 mono">● ONLINE</span></div>
       </div>
     </div>
   </div>
@@ -224,9 +229,9 @@
       <thead><tr class="text-gray-500 bg-gray-900/50"><th class="p-3">时间戳</th><th class="p-3">级别</th><th class="p-3">模块</th><th class="p-3">事件描述</th><th class="p-3">结果</th></tr></thead>
       <tbody>
         <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33.821</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">SSH_SNIFFER</td><td class="p-3 text-white">检测到 SSH 暴力破解，60s内失败登录 5 次</td><td class="p-3 text-green-400">物理熔断</td></tr>
-        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33.834</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">GPIO_CTRL</td><td class="p-3 text-white">触发 GPIO-22 继电器断电，广域网物理隔离</td><td class="p-3 text-green-400">执行成功</td></tr>
+        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33.834</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">AIRGAP_CTRL</td><td class="p-3 text-white">触发硬件级继电器断电，广域网物理隔离 (< 5ms)</td><td class="p-3 text-green-400">执行成功</td></tr>
         <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:18:07.443</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">CPU_SNIFFER</td><td class="p-3 text-white">CPU 占用率持续 10s 超过阈值 (99.9%)</td><td class="p-3 text-green-400">物理熔断</td></tr>
-        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">00:48:22.100</td><td class="p-3 text-blue-400 font-bold">SYSTEM</td><td class="p-3 text-gray-300">JARVIS_ROUTER</td><td class="p-3 text-white">用户指令"断网"命中极速路由规则，跳过 LLM 推理</td><td class="p-3 text-green-400">执行成功</td></tr>
+        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">00:48:22.100</td><td class="p-3 text-blue-400 font-bold">SYSTEM</td><td class="p-3 text-gray-300">JARVIS_ROUTER</td><td class="p-3 text-white">用户指令"断网"命中极速路由规则，跳过云端依赖</td><td class="p-3 text-green-400">执行成功</td></tr>
       </tbody>
     </table>
   </div>
@@ -266,7 +271,7 @@
       wrap.innerHTML = `<div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center shrink-0 text-white text-xs font-bold">U</div><div class="flex-1 text-right"><div class="text-xs text-gray-500 mb-1 mono">${t}</div><div class="inline-block bg-gray-800 text-white text-sm px-4 py-2 rounded-lg rounded-tr-none">${content}</div></div>`;
     } else {
       let body = isTicket
-        ? `<div class="bg-red-900/20 border border-red-500/40 rounded-lg p-4 mt-1"><div class="text-red-400 font-bold text-sm mb-3 border-b border-red-500/30 pb-2">⚠ 离线安全威胁评估报告</div><div class="grid grid-cols-2 gap-3 mb-3 text-xs"><div><div class="text-gray-500">威胁等级</div><div class="text-red-400 mono font-bold">CRITICAL</div></div><div><div class="text-gray-500">隔离状态</div><div class="neon mono font-bold">AIR-GAP ISOLATED</div></div></div><div class="space-y-2 text-sm text-gray-300">${content}</div><div class="mt-3 pt-2 border-t border-red-500/20 text-xs text-gray-500">输入 <span class="neon mono">恢复网络</span> 解除物理熔断</div></div>`
+        ? `<div class="bg-red-900/20 border border-red-500/40 rounded-lg p-4 mt-1"><div class="text-red-400 font-bold text-sm mb-3 border-b border-red-500/30 pb-2">⚠ 离线安全威胁评估报告 (Incident Report)</div><div class="grid grid-cols-2 gap-3 mb-3 text-xs"><div><div class="text-gray-500">威胁等级</div><div class="text-red-400 mono font-bold">CRITICAL</div></div><div><div class="text-gray-500">隔离状态</div><div class="neon mono font-bold">AIR-GAP ISOLATED</div></div></div><div class="space-y-2 text-sm text-gray-300">${content}</div><div class="mt-3 pt-2 border-t border-red-500/20 text-xs text-gray-500">输入 <span class="neon mono">恢复网络</span> 解除物理熔断</div></div>`
         : `<div class="text-sm text-gray-300 leading-relaxed">${content}</div>`;
       wrap.className = 'flex gap-3';
       wrap.innerHTML = `<div class="w-8 h-8 rounded bg-[#00ffcc]/20 border border-[#00ffcc] flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div><div class="flex-1"><div class="text-xs text-gray-500 mb-1 mono">QWEN2.5_ROUTER | ${t}</div>${body}</div>`;
@@ -294,7 +299,7 @@
     const wanLine = document.getElementById('wan-line');
     if(wanLine) wanLine.setAttribute('stroke', '#ff4444');
     
-    addLog('[CRITICAL] GPIO-22 继电器断电！广域网物理隔离！', 'error');
+    addLog('[CRITICAL] 硬件级物理继电器断电！广域网(WAN)物理隔离！', 'error');
   }
 
   // 重置系统
