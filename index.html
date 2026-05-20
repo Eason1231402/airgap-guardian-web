@@ -127,12 +127,12 @@
         <div class="bg-gray-900/80 border-t border-gray-800 shrink-0 flex flex-col">
           <div class="px-4 pt-2 pb-1 text-xs mono flex gap-5 border-b border-gray-800/50 bg-black/20">
             <span class="text-gray-400"><span class="text-blue-400 font-bold">⚡极速指令(0ms):</span> 断网 / 恢复网络 / 开灯 / 关灯</span>
-            <span class="text-gray-400"><span class="text-purple-400 font-bold">🧠语义对话(LLM):</span> 任意自然语言问答</span>
+            <span class="text-gray-400"><span class="text-purple-400 font-bold">🧠语义对话(LLM):</span> 你是谁 / 核心技术 / 商业模式 / 专利</span>
           </div>
           <div class="p-3">
             <div class="flex gap-2 items-center bg-black border border-gray-700 p-1.5 rounded-lg focus-within:border-[#00ffcc] transition-colors">
               <span class="neon mono font-bold pl-2 text-sm">❯</span>
-              <input type="text" id="cmd-input" class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2 placeholder-gray-600 mono" placeholder="输入指令或开始对话..." autocomplete="off">
+              <input type="text" id="cmd-input" class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2 placeholder-gray-600 mono" placeholder="输入极速指令或自然语言提问..." autocomplete="off">
               <button id="btn-send" class="px-4 py-1.5 bg-[#00ffcc] text-black font-bold rounded hover:bg-white transition-colors text-sm mono">执行 (Enter)</button>
             </div>
           </div>
@@ -305,12 +305,11 @@
     tbody.insertBefore(tr, tbody.firstChild);
   }
 
-  // 聊天消息渲染 (返回内容节点以便打字机效果使用)
+  // 聊天消息渲染
   function appendChat(role, content, isTicket=false){
     const box = document.getElementById('chat-output');
     const wrap = document.createElement('div');
     const t = new Date().toTimeString().split(' ')[0];
-    let contentNode;
     
     if(role === 'user'){
       wrap.className = 'flex gap-3 flex-row-reverse';
@@ -331,7 +330,6 @@
   function typeWriterEffect(el, text) {
     el.innerHTML = '';
     let i = 0;
-    // 模拟 Token 输出速度 (约 30-50ms/token)
     const timer = setInterval(() => {
       if(i < text.length) {
         el.innerHTML = text.substring(0, i+1) + '<span class="typing-cursor"></span>';
@@ -340,10 +338,32 @@
       } else {
         clearInterval(timer);
         el.innerHTML = text; // 移除光标
-        const costTime = text.length * 35 + 400; // 模拟耗时计算
+        const costTime = text.length * 25 + 300; 
         addLog(`[JARVIS] 本地大模型推理完成 (耗时: ${costTime}ms)`, 'success');
       }
-    }, 35); 
+    }, 30); 
+  }
+
+  // 智能问答知识库引擎 (模拟大模型)
+  function generateSmartResponse(input) {
+    const text = input.toLowerCase();
+    if (text.includes('你是谁') || text.includes('介绍') || text.includes('jarvis')) {
+      return "您好，我是 J.A.R.V.I.S 边缘可信中控系统。我由 Ethan 及核心团队研发，旨在通过硬件级物理气隙（Air-Gap）机制与本地大模型推理，彻底解决智能家居与高密办公场景下的隐私泄露问题。";
+    }
+    if (text.includes('核心技术') || text.includes('原理') || text.includes('架构') || text.includes('怎么做')) {
+      return "本系统的核心技术在于“双路径异构拓扑”。我们将广域网（WAN）与局域网（LAN）在物理层解耦。当检测到威胁时，系统能在 <5ms 内切断广域网继电器的供电，实现绝对的物理隔离，同时通过本地 Qwen2.5 模型与 Zigbee 协议，保持局域网内的智能控制不中断。";
+    }
+    if (text.includes('商业') || text.includes('定价') || text.includes('市场') || text.includes('卖')) {
+      return "我们的商业模式主要面向 B 端高密会议室（如金融机构、律所）及 C 端高端隐私市场。硬件租售占收入的 40%，后续的增值服务、安全测试与合规认证支持占 60%。我们避开了大众消费市场的价格战，专注于高净值客户对“绝对安全”的刚需。";
+    }
+    if (text.includes('专利') || text.includes('论文') || text.includes('创新')) {
+      return "我们在底层硬件创新上已申请相关专利，第一发明人为 Ethan。同时，我们的架构理论《Edge-Assisted Smart Home Gateway with Hardware-Level Air-Gap for Deterministic Privacy》已被 IEEE GAIIS2026 录用。";
+    }
+    if (text.includes('团队') || text.includes('成员')) {
+      return "我们的核心团队配置非常互补。Ethan 作为第一发明人负责底层硬件与 AI 模型；周昕昀担任 CDO，负责工业设计与用户体验，确保产品符合高端审美；施婷婷负责供应链协同，依托胜卡特公司的成熟制造基地，保障产品的高效量产。";
+    }
+    // 默认兜底回复
+    return `这是一个非常专业的问题。在当前的边缘计算架构下，我们优先保障确定性隐私与本地控制闭环。关于“${input}”的更多细节，建议您参考我们的商业计划书或技术白皮书。`;
   }
 
   // 触发熔断 UI
@@ -524,17 +544,12 @@
       addAuditEvent('SYSTEM', 'AUTH_MODULE', '动态口令验证通过，解除物理隔离', '验证通过', 'text-green-400');
       resetSystem();
     }
-    // 大模型对话分支 (打字机模拟)
+    // 大模型语义对话分支 (知识库匹配 + 打字机模拟)
     else {
       addLog('[ROUTER] 极速路由未命中，唤醒本地 Qwen2.5 模型...', 'info');
       
-      // 预置几条智能回复模板
-      const responses = [
-        `收到。关于“${text}”，作为运行在边缘计算核心的智能体，我已经为您处理完毕。当前物理气隙隔离状态良好，系统运行平稳。`,
-        `这是一个很好的问题。在当前的双路径异构拓扑下，系统优先保障确定性隐私。针对“${text}”的需求，我已在本地闭环内完成计算，无任何数据上传云端。`,
-        `已分析您的输入：“${text}”。本地 Qwen2.5 算力节点运行平稳，当前 CPU 负载正常，未发现越权访问尝试。如果您需要物理熔断，请随时下达“断网”指令。`
-      ];
-      const replyText = responses[Math.floor(Math.random() * responses.length)];
+      // 调用智能知识库引擎获取回复
+      const replyText = generateSmartResponse(text);
       
       // 创建一个空的聊天气泡
       const msgNode = appendChat('ai', ''); 
