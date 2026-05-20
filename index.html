@@ -119,20 +119,20 @@
             <div class="w-8 h-8 rounded bg-[#00ffcc]/20 border border-[#00ffcc] flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div>
             <div class="flex-1">
               <div class="text-xs text-gray-500 mb-1 mono">SYSTEM_INIT | 00:00:00</div>
-              <div class="text-sm text-gray-300 leading-relaxed">您好，评委老师。我是 J.A.R.V.I.S 边缘可信中控智能体。<br><br>本系统采用 <strong class="text-white">双路径异构拓扑 (Dual-Path Heterogeneous Topology) + 大模型深度推理</strong> 的混合架构。通过硬件级物理气隙隔离，实现 <strong class="text-white">确定性隐私 (Deterministic Privacy)</strong> 与零数据泄露。<br><br>您可以点击左侧演示按钮，或在下方输入框直接与我交互。</div>
+              <div class="text-sm text-gray-300 leading-relaxed">您好，Ethan。我是 J.A.R.V.I.S 边缘可信中控智能体。<br><br>本系统采用 <strong class="text-white">双路径异构拓扑 (Dual-Path Heterogeneous Topology) + 大模型深度推理</strong> 的混合架构。通过硬件级物理气隙隔离，实现 <strong class="text-white">确定性隐私 (Deterministic Privacy)</strong> 与零数据泄露。<br><br>您可以点击左侧演示攻击，并在攻击后向我询问安全排查建议。</div>
             </div>
           </div>
         </div>
         <!-- 输入区域 (含提示字典) -->
         <div class="bg-gray-900/80 border-t border-gray-800 shrink-0 flex flex-col">
           <div class="px-4 pt-2 pb-1 text-xs mono flex gap-5 border-b border-gray-800/50 bg-black/20">
-            <span class="text-gray-400"><span class="text-blue-400 font-bold">⚡极速指令(0ms):</span> 断网 / 恢复网络 / 开灯 / 关灯</span>
-            <span class="text-gray-400"><span class="text-purple-400 font-bold">🧠语义对话(LLM):</span> 你是谁 / 核心技术 / 商业模式 / 专利</span>
+            <span class="text-gray-400"><span class="text-blue-400 font-bold">⚡极速指令:</span> 断网 / 恢复网络</span>
+            <span class="text-gray-400"><span class="text-purple-400 font-bold">🧠安全管家:</span> 如何处理这次攻击？ / 帮我溯源 / 你的建议是？</span>
           </div>
           <div class="p-3">
             <div class="flex gap-2 items-center bg-black border border-gray-700 p-1.5 rounded-lg focus-within:border-[#00ffcc] transition-colors">
               <span class="neon mono font-bold pl-2 text-sm">❯</span>
-              <input type="text" id="cmd-input" class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2 placeholder-gray-600 mono" placeholder="输入极速指令或自然语言提问..." autocomplete="off">
+              <input type="text" id="cmd-input" class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2 placeholder-gray-600 mono" placeholder="输入极速指令或向安全管家提问..." autocomplete="off">
               <button id="btn-send" class="px-4 py-1.5 bg-[#00ffcc] text-black font-bold rounded hover:bg-white transition-colors text-sm mono">执行 (Enter)</button>
             </div>
           </div>
@@ -344,26 +344,38 @@
     }, 30); 
   }
 
-  // 智能问答知识库引擎 (模拟大模型)
+  // --- 核心：状态感知的智能安全管家引擎 ---
+  let lastAttackType = ''; // 记忆上一次发生的攻击类型
+
   function generateSmartResponse(input) {
     const text = input.toLowerCase();
-    if (text.includes('你是谁') || text.includes('介绍') || text.includes('jarvis')) {
-      return "您好，我是 J.A.R.V.I.S 边缘可信中控系统。我由 Ethan 及核心团队研发，旨在通过硬件级物理气隙（Air-Gap）机制与本地大模型推理，彻底解决智能家居与高密办公场景下的隐私泄露问题。";
+    
+    // 1. 安全排查与建议逻辑 (基于上下文状态)
+    if (text.includes('处理') || text.includes('怎么办') || text.includes('建议') || text.includes('溯源') || text.includes('分析')) {
+      if (lastAttackType === 'ssh') {
+        return "Ethan，针对刚刚发生的 <strong class='text-white'>SSH 暴力破解</strong>，物理气隙已成功切断外网连接，阻止了提权风险。<br><br>基于第一性原理，我建议您采取以下排查措施：<br>1. 立即修改默认的 22 端口；<br>2. 禁用 Root 密码登录，强制使用 RSA/Ed25519 密钥认证；<br>3. 我已在本地局域网为您生成了 Fail2ban 策略草稿，准备永久封禁来源 IP 192.168.1.105。<br><br>系统目前处于绝对安全状态，请问是否需要我执行上述策略？";
+      } 
+      else if (lastAttackType === 'cpu') {
+        return "Ethan，关于刚才的 <strong class='text-white'>算力异常满载</strong>，物理熔断机制已有效防止了硬件过热与潜在的挖矿数据外传。<br><br>我的排查建议如下：<br>1. 登录本地终端，使用 <code>htop</code> 锁定 PID:4821 的父进程；<br>2. 检查 <code>/var/spool/cron</code> 是否被植入恶意定时任务；<br>3. 隔离受感染的 Docker 容器。<br><br>在您完成本地排查前，建议维持当前的物理断网状态。";
+      }
+      else if (lastAttackType === 'udp') {
+        return "Ethan，针对刚才的 <strong class='text-white'>UDP Flood 流量激增</strong>，物理隔离已瞬间切断了数据外泄通道。<br><br>这通常意味着局域网内有 IoT 设备被僵尸网络（如 Mirai）感染。我的建议是：<br>1. 逐一排查局域网内网络摄像头的固件版本；<br>2. 在本地路由器层面对异常 MAC 地址进行过滤；<br>3. 检查是否有未授权的内网穿透服务。<br><br>需要我为您扫描当前局域网的存活节点吗？";
+      }
+      else {
+        return "Ethan，目前系统运行平稳，未检测到任何正在发生的攻击。物理气隙继电器处于 ONLINE 状态，边缘节点的 CPU 与温度均在正常阈值内。如果您想测试我的应急响应能力，请先在左侧触发一个模拟攻击。";
+      }
     }
-    if (text.includes('核心技术') || text.includes('原理') || text.includes('架构') || text.includes('怎么做')) {
+
+    // 2. 基础知识库逻辑
+    if (text.includes('你是谁') || text.includes('介绍') || text.includes('jarvis')) {
+      return "您好，Ethan。我是 J.A.R.V.I.S 边缘可信中控系统。我由您及核心团队研发，旨在通过硬件级物理气隙（Air-Gap）机制与本地大模型推理，彻底解决智能家居与高密办公场景下的隐私泄露问题。";
+    }
+    if (text.includes('核心技术') || text.includes('原理') || text.includes('架构')) {
       return "本系统的核心技术在于“双路径异构拓扑”。我们将广域网（WAN）与局域网（LAN）在物理层解耦。当检测到威胁时，系统能在 <5ms 内切断广域网继电器的供电，实现绝对的物理隔离，同时通过本地 Qwen2.5 模型与 Zigbee 协议，保持局域网内的智能控制不中断。";
     }
-    if (text.includes('商业') || text.includes('定价') || text.includes('市场') || text.includes('卖')) {
-      return "我们的商业模式主要面向 B 端高密会议室（如金融机构、律所）及 C 端高端隐私市场。硬件租售占收入的 40%，后续的增值服务、安全测试与合规认证支持占 60%。我们避开了大众消费市场的价格战，专注于高净值客户对“绝对安全”的刚需。";
-    }
-    if (text.includes('专利') || text.includes('论文') || text.includes('创新')) {
-      return "我们在底层硬件创新上已申请相关专利，第一发明人为 Ethan。同时，我们的架构理论《Edge-Assisted Smart Home Gateway with Hardware-Level Air-Gap for Deterministic Privacy》已被 IEEE GAIIS2026 录用。";
-    }
-    if (text.includes('团队') || text.includes('成员')) {
-      return "我们的核心团队配置非常互补。Ethan 作为第一发明人负责底层硬件与 AI 模型；周昕昀担任 CDO，负责工业设计与用户体验，确保产品符合高端审美；施婷婷负责供应链协同，依托胜卡特公司的成熟制造基地，保障产品的高效量产。";
-    }
+    
     // 默认兜底回复
-    return `这是一个非常专业的问题。在当前的边缘计算架构下，我们优先保障确定性隐私与本地控制闭环。关于“${input}”的更多细节，建议您参考我们的商业计划书或技术白皮书。`;
+    return `这是一个非常专业的问题。在当前的边缘计算架构下，我优先保障确定性隐私与本地控制闭环。关于“${input}”的更多细节，我的本地知识库正在持续学习中。`;
   }
 
   // 触发熔断 UI
@@ -395,6 +407,7 @@
   // 重置系统
   function resetSystem(){
     sysState = {relay:'ONLINE', attacking:false, challenge:false};
+    lastAttackType = ''; // 重置攻击记忆
     const box = document.getElementById('relay-box');
     const txt = document.getElementById('relay-text');
     box.className = 'border border-[#00ffcc] p-3 text-center rounded-lg bg-[#00ffcc]/10 transition-all duration-500';
@@ -420,7 +433,7 @@
     const wanLine = document.getElementById('wan-line');
     if(wanLine) wanLine.setAttribute('stroke', '#00ffcc44');
 
-    appendChat('ai', '✅ 系统已重置，广域网继电器重新吸合，可再次进行演示。');
+    appendChat('ai', '✅ 系统已重置，广域网继电器重新吸合，安全状态已恢复。');
     addLog('[SYSTEM] 系统状态已重置', 'success');
     addAuditEvent('SYSTEM', 'AIRGAP_CTRL', '系统重置，广域网继电器重新闭合', '执行成功', 'text-green-400');
   }
@@ -433,6 +446,7 @@
     }
     if(sysState.attacking) return;
     sysState.attacking = true;
+    lastAttackType = type; // 记录当前攻击类型供大模型分析使用
 
     if(type === 'cpu'){
       appendChat('user', '【评委模拟】执行算力满载攻击脚本...');
@@ -554,7 +568,7 @@
       // 创建一个空的聊天气泡
       const msgNode = appendChat('ai', ''); 
       
-      // 模拟 400ms 的模型加载/思考延迟，然后开始打字
+      // 模拟 400ms 的模型加载延迟，然后开始打字
       setTimeout(() => {
         typeWriterEffect(msgNode, replyText);
       }, 400);
