@@ -9,7 +9,7 @@ export default async function handler(req, res) {
 请用客观、冷静、专业的语气回答，结合第一性原理给出安全排查建议。`;
 
   try {
-     1. 替换为大赛官方的 Endpoint
+       // 1. 替换为大赛官方的 Endpoint
     const response = await fetch('https://ai.synnovator.com/v1/chat/completions', {
       method: 'POST',
       headers: {
