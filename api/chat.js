@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   const { message, attackContext } = req.body;
   
   // 获取环境变量
-  const apikey = process.env.ZHIPU_API_KEY; 
+  const apikey = process.env.const apikey = process.env.LLM_API_KEY;; 
 
   if (!apikey) {
     return res.status(200).json({ reply: "系统错误：未在 Vercel 配置 ZHIPU_API_KEY 环境变量。" });
