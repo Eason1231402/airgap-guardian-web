@@ -675,4 +675,216 @@
     addLog('[ROUTER] 路由未命中，唤醒大模型...','info');
 
     const bubble = createJarvisBubble();
-    bubble.innerHTML='<span class="thinking text-gray-500 mono text-xs">▌ 边缘推理中 (Inferencing)
+    bubble.innerHTML='<span class="thinking text-gray-500 mono text-xs">▌ 边缘推理中 (Inferencing)...</span>';
+    // 接上：bubble.innerHTML='<span class="thinking ...">' 之后继续
+
+  const t0 = Date.now();
+  const reply = await callJarvisAI(text);
+  const ms = Date.now() - t0;
+
+  addLog(`[JARVIS] 推理完成 (${ms}ms)`, 'success');
+  addAuditEvent('SYSTEM', 'JARVIS_LLM', `问询: "${text.substring(0,20)}..."`, `完成 ${ms}ms`, 'text-green-400');
+  typeWriterEffect(bubble, reply);
+
+  isAIThinking = false;
+  document.getElementById('btn-send').disabled = false;
+  document.getElementById('btn-send').innerText = '执行 (Enter)';
+}
+
+document.getElementById('btn-send').addEventListener('click', () => processInput(false));
+document.getElementById('cmd-input').addEventListener('keypress', e => { if(e.key === 'Enter') processInput(false); });
+
+// ========== 大模型 API ==========
+async function callJarvisAI(msg) {
+  const ctx = lastAttackType
+    ? `当前系统刚刚遭受【${
+        lastAttackType==='ssh' ? 'SSH暴力破解' :
+        lastAttackType==='cpu' ? '算力满载/恶意挖矿' :
+        lastAttackType==='udp' ? 'UDP Flood流量激增' :
+        lastAttackType==='voice' ? '录音回放攻击' : '用户主动断网'
+      }】攻击，物理气隙已熔断，广域网物理隔离。`
+    : '当前系统运行平稳，无活跃威胁。';
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, attackContext: ctx, relayStatus: sysState.relay })
+    });
+    if(!res.ok) throw new Error('api_err');
+    const data = await res.json();
+    return data.reply || '推理完成，但未获得有效回复。';
+  } catch(e) {
+    addLog('[API] 云端异常，切换本地兜底', 'warn');
+    return fallback(msg);
+  }
+}
+
+function fallback(input) {
+  const t = input.toLowerCase();
+  if(t.includes('处理') || t.includes('建议') || t.includes('溯源') || t.includes('怎么办')) {
+    if(lastAttackType==='ssh')   return "针对SSH暴力破解：立即修改默认22端口，禁用密码登录强制RSA密钥，永久封禁来源IP 192.168.1.105。物理气隙已确保攻击者无法进一步渗透。";
+    if(lastAttackType==='cpu')   return "针对算力满载：使用htop定位PID:4821父进程，检查/var/spool/cron恶意任务，隔离可疑容器。排查完成前维持断网状态。";
+    if(lastAttackType==='udp')   return "针对UDP Flood：排查局域网IoT固件版本，路由器层面过滤异常MAC，检查未授权内网穿透服务（frp/ngrok）。";
+    if(lastAttackType==='voice') return "针对录音回放：系统已通过动态口令成功拦截。建议排查物理环境是否存在未授权拾音设备，检查麦克风阵列访问权限。";
+    return "请先触发左侧攻击演示，我将基于实际攻击类型给出针对性建议。";
+  }
+  if(t.includes('你是谁') || t.includes('介绍'))
+    return "我是J.A.R.V.I.S，由Ethan研发的边缘可信中控系统，采用双路径异构拓扑与硬件级物理气隙，实现确定性隐私保护。";
+  if(t.includes('声纹') || t.includes('voiceprint'))
+    return "声纹验证基于Resemblyzer提取d-vector特征，计算余弦相似度。阈值0.85以上判定为主理人，结合动态口令质询实现双因子防重放。";
+  if(t.includes('继电器') || t.includes('气隙') || t.includes('relay'))
+    return "硬件级气隙继电器串联于WAN物理链路，触发时直接断开电气连接，响应时延<5ms，软件层面无法绕过，这是系统安全的最终防线。";
+  if(t.includes('专利') || t.includes('patent'))
+    return "本系统核心创新已申请发明专利，涵盖边缘计算节点的物理安全熔断机制与声纹双因子认证架构，第一发明人：Ethan。";
+  return `关于"${input}"，本地知识库处理中。如需深度分析，请确保网络连接以启用云端推理。`;
+}
+
+// ========== 熔断 UI ==========
+function triggerLockdown() {
+  sysState.relay = 'SEVERED';
+  document.getElementById('relay-box').className = 'border border-red-500 p-3 text-center rounded-lg bg-red-500/10 transition-all duration-500 blink';
+  document.getElementById('relay-text').className = 'text-xl font-bold neon-red mono tracking-widest';
+  document.getElementById('relay-text').innerText = 'SEVERED (熔断)';
+  document.getElementById('sys-status').className = 'text-red-400';
+  document.getElementById('sys-status').innerText = '● LOCKDOWN';
+  const tr = document.getElementById('topo-relay');
+  if(tr) { tr.innerText = '● OPEN'; tr.className = 'text-red-400 mono'; }
+  const wl = document.getElementById('wan-line');
+  if(wl) wl.setAttribute('stroke', '#ff4444');
+  addLog('[CRITICAL] 物理继电器断电！广域网隔离！', 'error');
+  document.getElementById('stat-lockdowns').innerText = parseInt(document.getElementById('stat-lockdowns').innerText) + 1;
+  addAuditEvent('CRITICAL', 'AIRGAP_CTRL', '触发继电器断电，广域网物理隔离(<5ms)', '执行成功', 'text-green-400');
+}
+
+// ========== 重置 ==========
+function resetSystem() {
+  sysState = { relay:'ONLINE', attacking:false, challenge:false };
+  lastAttackType = '';
+  challengeCode = '';
+  document.getElementById('relay-box').className = 'border border-[#00ffcc] p-3 text-center rounded-lg bg-[#00ffcc]/10 transition-all duration-500';
+  document.getElementById('relay-text').className = 'text-xl font-bold neon mono tracking-widest';
+  document.getElementById('relay-text').innerText = 'ONLINE';
+  document.getElementById('cpu-bar').className = 'bar-fill bg-[#00ffcc]';
+  document.getElementById('cpu-bar').style.width = '12%';
+  document.getElementById('cpu-text').innerText = '12.0%';
+  document.getElementById('cpu-text').className = 'neon';
+  document.getElementById('net-bar').className = 'bar-fill bg-[#00ffcc]';
+  document.getElementById('net-bar').style.width = '5%';
+  document.getElementById('net-text').innerText = '0.02MB/s';
+  document.getElementById('net-text').className = 'neon';
+  document.getElementById('sys-status').className = 'text-green-400';
+  document.getElementById('sys-status').innerText = '● SYSTEM ONLINE';
+  const tr = document.getElementById('topo-relay');
+  if(tr) { tr.innerText = '● CLOSED'; tr.className = 'text-green-400 mono'; }
+  const wl = document.getElementById('wan-line');
+  if(wl) wl.setAttribute('stroke', '#00ffcc44');
+  appendChat('ai', '✅ 系统已重置，广域网继电器重新吸合，安全状态恢复。');
+  addLog('[SYSTEM] 系统状态已重置', 'success');
+  addAuditEvent('SYSTEM', 'AIRGAP_CTRL', '系统重置，继电器重新闭合', '执行成功', 'text-green-400');
+}
+
+// ========== 攻击模拟 ==========
+function simulateAttack(type) {
+  if(sysState.relay === 'SEVERED') {
+    appendChat('ai', '⚠️ 系统已熔断，请先输入 <span class="neon mono">恢复网络</span> 或点击【重置系统状态】。');
+    return;
+  }
+  if(sysState.attacking) return;
+  sysState.attacking = true;
+  lastAttackType = type;
+
+  if(type === 'cpu') {
+    appendChat('user', '【评委模拟】执行算力满载攻击...');
+    addLog('[嗅探器] CPU 异常飙升...', 'warn');
+    let c = 12, ti = 0;
+    const iv = setInterval(() => {
+      c = Math.min(c + 18, 99.9); ti++;
+      document.getElementById('cpu-text').innerText = c.toFixed(1) + '%';
+      document.getElementById('cpu-bar').style.width = c + '%';
+      document.getElementById('cpu-bar').className = 'bar-fill bg-red-500';
+      document.getElementById('cpu-text').className = 'text-red-400 font-bold';
+      addLog(`[CPU_SNIFFER] 高负载 ${c.toFixed(1)}%，超阈值！`, 'warn');
+      if(ti >= 5) {
+        clearInterval(iv);
+        addThreatEvent('算力异常满载', 'PID:4821', 'CRITICAL', '✓ 物理熔断', 'text-green-400');
+        addAuditEvent('CRITICAL', 'CPU_SNIFFER', 'CPU持续超阈值(99.9%)', '物理熔断', 'text-green-400');
+        triggerLockdown();
+        setTimeout(() => {
+          appendChat('ai', '<div><span class="text-gray-400">拦截原因：</span>CPU满载超阈值</div><div class="mt-2"><span class="text-gray-400">AI分析：</span>疑似恶意挖矿，PID:4821。可询问处理建议。</div>', true);
+          sysState.attacking = false;
+        }, 800);
+      }
+    }, 300);
+  }
+
+  if(type === 'ssh') {
+    appendChat('user', '【评委模拟】执行 SSH 暴力破解...');
+    let count = 0;
+    const iv = setInterval(() => {
+      count++;
+      addLog(`[SSH_SNIFFER] 失败登录 192.168.1.105，累计 ${count} 次`, 'warn');
+      if(count >= 5) {
+        clearInterval(iv);
+        addThreatEvent('SSH 暴力破解', '192.168.1.105', 'CRITICAL', '✓ 物理熔断', 'text-green-400');
+        addAuditEvent('CRITICAL', 'SSH_SNIFFER', '60s内失败登录5次', '物理熔断', 'text-green-400');
+        triggerLockdown();
+        setTimeout(() => {
+          appendChat('ai', '<div><span class="text-gray-400">拦截原因：</span>60s内非法登录5次</div><div class="mt-2"><span class="text-gray-400">AI分析：</span>高频SSH字典攻击，存在提权风险。可询问处理建议。</div>', true);
+          sysState.attacking = false;
+        }, 800);
+      }
+    }, 250);
+  }
+
+  if(type === 'udp') {
+    appendChat('user', '【评委模拟】执行 UDP Flood 攻击...');
+    addLog('[嗅探器] 出站流量突增...', 'warn');
+    let nv = 0.02, ti = 0;
+    const iv = setInterval(() => {
+      nv = nv * 4 + Math.random() * 10; ti++;
+      document.getElementById('net-text').innerText = nv.toFixed(1) + 'MB/s';
+      document.getElementById('net-bar').style.width = Math.min((nv / 50) * 100, 100) + '%';
+      document.getElementById('net-bar').className = 'bar-fill bg-red-500';
+      document.getElementById('net-text').className = 'text-red-400 font-bold';
+      addLog(`[NET_SNIFFER] 异常流量 ${nv.toFixed(1)}MB/s，远超基线！`, 'warn');
+      if(ti >= 5) {
+        clearInterval(iv);
+        addThreatEvent('异常出站流量', 'wlan0→外网', 'HIGH', '✓ 流量截断', 'text-green-400');
+        addAuditEvent('HIGH', 'NET_SNIFFER', '流量超基线620倍', '流量截断', 'text-green-400');
+        triggerLockdown();
+        setTimeout(() => {
+          appendChat('ai', '<div><span class="text-gray-400">拦截原因：</span>UDP Flood流量激增</div><div class="mt-2"><span class="text-gray-400">AI分析：</span>疑似DDoS或数据外发窃取。可询问处理建议。</div>', true);
+          sysState.attacking = false;
+        }, 800);
+      }
+    }, 350);
+  }
+
+  if(type === 'net') {
+    appendChat('user', '断网');
+    addLog('[ROUTER] 极速指令: net_cut (0.012ms)', 'success');
+    addThreatEvent('用户指令断网', '本地控制台', 'HIGH', '✓ 物理熔断', 'text-green-400');
+    addAuditEvent('SYSTEM', 'JARVIS_ROUTER', '指令"断网"命中极速路由', '执行成功', 'text-green-400');
+    triggerLockdown();
+    appendChat('ai', '✅ 物理熔断已触发，切入纯局域网绝对隐私模式。');
+    sysState.attacking = false;
+  }
+}
+
+// ========== 遥测波动 ==========
+setInterval(() => {
+  if(sysState.attacking || sysState.relay === 'SEVERED') return;
+  const cpu  = (Math.random() * 8 + 8).toFixed(1);
+  const temp = (Math.random() * 2 + 42).toFixed(1);
+  const net  = (Math.random() * 0.05).toFixed(3);
+  document.getElementById('cpu-text').innerText  = cpu + '%';
+  document.getElementById('cpu-bar').style.width = cpu + '%';
+  document.getElementById('temp-text').innerText  = temp + '°C';
+  document.getElementById('temp-bar').style.width = (parseFloat(temp) / 100 * 100) + '%';
+  document.getElementById('net-text').innerText  = net + 'MB/s';
+  document.getElementById('net-bar').style.width = (parseFloat(net) / 0.05 * 5) + '%';
+}, 2500);
+
+</script>
+</body>
+</html>
