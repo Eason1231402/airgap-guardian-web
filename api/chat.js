@@ -9,26 +9,21 @@ export default async function handler(req, res) {
 请用客观、冷静、专业的语气回答，结合第一性原理给出安全排查建议。`;
 
   try {
-    // 这里换成了智谱 GLM 的官方通用接口地址
-    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+     1. 替换为大赛官方的 Endpoint
+    const response = await fetch('https://ai.synnovator.com/v1/chat/completions', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': `Bearer ${process.env.LLM_API_KEY}` // 依然读取 Vercel 的环境变量
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
       },
-      body: JSON.stringify({ 
-        model: 'glm-5.1', // 换成邮件里指定的模型名称
+      body: JSON.stringify({
+        // 2. 替换为大赛指定的模型代号
+        model: "glm-5.1", 
         messages: [
-          { role: 'system', content: systemPrompt }, 
-          { role: 'user', content: message }
-        ], 
-        temperature: 0.3 
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message }
+        ],
+        temperature: 0.3,
+        stream: false // 官方文档中特别写明了 stream: false
       })
     });
-
-    const data = await response.json();
-    res.status(200).json({ reply: data.choices[0].message.content });
-  } catch (error) {
-    res.status(500).json({ reply: "边缘算力节点响应超时，请检查网络。" });
-  }
-}
