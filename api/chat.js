@@ -7,19 +7,12 @@ export default async function handler(req, res) {
 当前系统状态：${attackContext}，继电器状态：${relayStatus}。
 回答要求：专业、冷静、简洁，结合第一性原理，给出具体可执行的安全建议。回复使用中文，不超过200字。`;
 
-  // 如果用阿里云 Qwen，替换 fetch 部分即可：
-const response = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
-  method: 'POST',
-  headers: { 
-    'Content-Type': 'application/json', 
-    'Authorization': `Bearer ${process.env.LLM_API_KEY}` 
-  },
-  body: JSON.stringify({ 
-    model: 'qwen-turbo', // 或者 qwen-plus
-    messages: [
-      { role: 'system', content: systemPrompt }, 
-      { role: 'user', content: message }
-    ], 
-    temperature: 0.4 
-  })
-});
+  const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.LLM_API_KEY}` },
+    body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }], temperature: 0.4 })
+  });
+
+  const data = await response.json();
+  res.status(200).json({ reply: data.choices[0].message.content });
+}
