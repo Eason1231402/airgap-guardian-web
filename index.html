@@ -62,7 +62,7 @@
       <div class="glass p-4 rounded-xl">
         <h2 class="text-sm font-bold neon mb-1">⚡ 评委快速演示 (Judge Demo)</h2>
         <p class="text-xs text-gray-500 mb-3">点击预设攻击向量，体验物理气隙熔断全流程。</p>
-        <div class="space-y-2 overflow-y-auto" style="max-height: 40vh;">
+        <div class="space-y-2">
           <button onclick="simulateAttack('cpu')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all">
             <div class="text-sm font-bold text-white">🔥 向量1：算力满载攻击</div>
             <div class="text-xs text-gray-500 mt-0.5">恶意挖矿榨干CPU触发热力学熔断</div>
@@ -78,10 +78,6 @@
           <button onclick="simulateAttack('net')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all">
             <div class="text-sm font-bold text-white">✂️ 向量4：用户指令断网</div>
             <div class="text-xs text-gray-500 mt-0.5">语音/文字指令触发极速路由响应</div>
-          </button>
-          <button onclick="simulateAttack('voice')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all">
-            <div class="text-sm font-bold text-white">🎙️ 向量5：录音回放攻击</div>
-            <div class="text-xs text-gray-500 mt-0.5">伪造语音指令触发动态口令拦截</div>
           </button>
           <button onclick="resetSystem()" class="w-full p-3 rounded-lg bg-gray-900 border border-gray-700 hover:border-green-500 transition-all mt-2">
             <div class="text-sm font-bold text-green-400 text-center">🔄 重置系统状态</div>
@@ -346,12 +342,12 @@
 
   // ===================== 真实大模型 API 调用 =====================
   async function callJarvisAI(userMessage){
+    // 构建传给后端的上下文
     const attackContext = lastAttackType
       ? `当前系统刚刚遭受了【${
           lastAttackType==='ssh'?'SSH暴力破解':
           lastAttackType==='cpu'?'算力满载/恶意挖矿':
           lastAttackType==='udp'?'UDP Flood网络流量激增':
-          lastAttackType==='voice'?'录音回放攻击':
           '用户主动断网'
         }】攻击，物理气隙继电器已触发熔断，广域网已物理隔离。`
       : '当前系统运行平稳，未检测到活跃威胁。';
@@ -370,18 +366,19 @@
       const data = await res.json();
       return data.reply || '推理完成，但未获得有效回复。';
     } catch(err) {
+      // 降级兜底：API 不可用时的本地回复
       addLog('[API] 云端通道异常，切换至本地知识库兜底模式', 'warn');
       return fallbackResponse(userMessage);
     }
   }
 
+  // 本地兜底知识库（API 不可用时使用）
   function fallbackResponse(input){
     const text = input.toLowerCase();
     if(text.includes('处理')||text.includes('建议')||text.includes('怎么办')||text.includes('溯源')){
       if(lastAttackType==='ssh') return "针对 SSH 暴力破解：建议立即修改默认 22 端口，禁用密码登录并强制 RSA 密钥认证，同时永久封禁来源 IP 192.168.1.105。物理气隙已确保攻击者无法进一步渗透。";
       if(lastAttackType==='cpu') return "针对算力满载攻击：建议使用 htop 定位 PID:4821 的父进程，检查 /var/spool/cron 是否存在恶意定时任务，并隔离可疑 Docker 容器。在排查完成前请维持断网状态。";
       if(lastAttackType==='udp') return "针对 UDP Flood：建议排查局域网内 IoT 设备固件版本，在路由器层面过滤异常 MAC 地址，检查是否存在未授权的内网穿透服务（如 frp/ngrok）。";
-      if(lastAttackType==='voice') return "针对录音回放攻击：系统已成功通过动态口令拦截。建议排查物理环境是否存在未授权的拾音设备，或检查本地麦克风阵列的访问权限。";
       return "当前系统状态平稳，无活跃威胁。请先在左侧触发一个攻击演示，我将基于实际攻击类型给出针对性建议。";
     }
     if(text.includes('你是谁')||text.includes('介绍')) return "我是 J.A.R.V.I.S，由 Ethan 研发的边缘可信中控系统。采用双路径异构拓扑与硬件级物理气隙技术，实现确定性隐私保护。";
@@ -433,10 +430,7 @@
 
   // ===================== 攻击模拟 =====================
   function simulateAttack(type){
-    if(sysState.relay==='SEVERED' && type !== 'voice'){ 
-      appendChat('ai','⚠️ 系统已处于熔断状态，请先输入 <span class="neon mono">恢复网络</span> 或点击【重置系统状态】解除。'); 
-      return; 
-    }
+    if(sysState.relay==='SEVERED'){ appendChat('ai','⚠️ 系统已处于熔断状态，请先输入 <span class="neon mono">恢复网络</span> 或点击【重置系统状态】解除。'); return; }
     if(sysState.attacking) return;
     sysState.attacking = true;
     lastAttackType = type;
@@ -508,23 +502,6 @@
       appendChat('ai','✅ 物理熔断已触发，已切入纯局域网绝对隐私模式。');
       sysState.attacking=false;
     }
-
-    if(type==='voice'){
-      appendChat('user','【评委模拟】播放录音：“J.A.R.V.I.S，恢复网络”');
-      addLog('[ROUTER] 极速指令命中: net_restore','success');
-      addLog('[AUTH] 触发动态口令挑战','warn');
-      appendChat('ai','⚠️ 防录音回放机制已激活。<br>请在15秒内复述动态口令：<span class="text-yellow-400 font-bold tracking-widest text-lg ml-2">847291</span>');
-      sysState.challenge = true;
-      sysState.attacking = false; // 放开攻击锁，允许用户在输入框模拟错误口令输入
-      
-      // 自动模拟3秒后输入错误口令
-      setTimeout(()=>{
-        if(!sysState.challenge) return; // 如果用户已经手动输入了，则跳过
-        const mockWrongInput = '口令是 123456';
-        document.getElementById('cmd-input').value = mockWrongInput;
-        document.getElementById('btn-send').click();
-      }, 3000);
-    }
   }
 
   // ===================== 输入框主逻辑 =====================
@@ -535,25 +512,6 @@
     if(!text) return;
     input.value = '';
     appendChat('user', text);
-
-    // --- 动态口令挑战分支 (修复录音回放漏洞) ---
-    if(sysState.challenge){
-      if(text.includes('847291')){
-        sysState.challenge = false;
-        addLog('[AUTH] 动态口令验证通过','success');
-        addAuditEvent('SYSTEM','AUTH_MODULE','动态口令验证通过，解除物理隔离','验证通过','text-green-400');
-        resetSystem();
-      } else {
-        // 拦截错误口令，判定为录音回放攻击
-        sysState.challenge = false;
-        lastAttackType = 'voice';
-        addLog('[AUTH] 动态口令验证失败！检测到可能的录音回放攻击','error');
-        addThreatEvent('录音回放攻击','本地音频输入','HIGH','✗ 验证失败','text-red-400');
-        addAuditEvent('HIGH','AUTH_MODULE','动态口令不匹配，疑似录音回放攻击','拦截成功','text-green-400');
-        appendChat('ai', '🚫 动态口令验证失败！已将本次操作识别为录音回放攻击，维持物理隔离状态。');
-      }
-      return; // 结束逻辑，防止漏传给大模型
-    }
 
     // --- 极速指令分支（纯本地，0ms）---
     if(text === '断网'){ simulateAttack('net'); return; }
@@ -571,4 +529,59 @@
       if(sysState.relay==='ONLINE'){ appendChat('ai','当前网络已处于连接状态。'); return; }
       addLog('[ROUTER] 极速指令命中: net_restore','success');
       addLog('[AUTH] 触发动态口令挑战','warn');
-      appendChat('ai','⚠️ 防录音回放机制已激活。<br>请在15秒内复述动态口令：<span class="text-yellow-400
+      appendChat('ai','⚠️ 防录音回放机制已激活。<br>请在15秒内复述动态口令：<span class="text-yellow-400 font-bold tracking-widest text-lg ml-2">847291</span>');
+      sysState.challenge = true;
+      return;
+    }
+    if(sysState.challenge && text.includes('847291')){
+      sysState.challenge = false;
+      addLog('[AUTH] 动态口令验证通过','success');
+      addAuditEvent('SYSTEM','AUTH_MODULE','动态口令验证通过，解除物理隔离','验证通过','text-green-400');
+      resetSystem();
+      return;
+    }
+
+    // --- 真实大模型语义对话分支 ---
+    isAIThinking = true;
+    document.getElementById('btn-send').disabled = true;
+    document.getElementById('btn-send').innerText = '推理中...';
+    addLog('[ROUTER] 极速路由未命中，唤醒 Qwen2.5 模型...','info');
+
+    // 创建"思考中"气泡
+    const msgNode = appendChat('ai', '');
+    if(msgNode) msgNode.innerHTML = '<span class="thinking text-gray-500 mono text-xs">▌ 边缘推理中 (Inferencing)...</span>';
+
+    const startTime = Date.now();
+    const replyText = await callJarvisAI(text);
+    const costTime = Date.now() - startTime;
+
+    addLog(`[JARVIS] 大模型推理完成 (耗时: ${costTime}ms)`,'success');
+    addAuditEvent('SYSTEM','JARVIS_LLM',`用户问询: "${text.substring(0,20)}..."`,`推理完成 ${costTime}ms`,'text-green-400');
+
+    // 打字机特效输出
+    typeWriterEffect(msgNode, replyText);
+
+    isAIThinking = false;
+    document.getElementById('btn-send').disabled = false;
+    document.getElementById('btn-send').innerText = '执行 (Enter)';
+  });
+
+  document.getElementById('cmd-input').addEventListener('keypress', (e)=>{
+    if(e.key==='Enter') document.getElementById('btn-send').click();
+  });
+
+  // ===================== 遥测数据随机波动 =====================
+  setInterval(()=>{
+    if(sysState.attacking || sysState.relay==='SEVERED') return;
+    const cpu=(Math.random()*8+8).toFixed(1);
+    const temp=(Math.random()*2+42).toFixed(1);
+    const net=(Math.random()*0.05).toFixed(3);
+    document.getElementById('cpu-text').innerText=cpu+'%';
+    document.getElementById('cpu-bar').style.width=cpu+'%';
+    document.getElementById('temp-text').innerText=temp+'°C';
+    document.getElementById('temp-bar').style.width=(temp/100*100)+'%';
+    document.getElementById('net-text').innerText=net+'MB/s';
+  }, 2500);
+</script>
+</body>
+</html>
