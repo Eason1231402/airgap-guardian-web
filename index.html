@@ -21,13 +21,15 @@
     ::-webkit-scrollbar-thumb { background:#00ffcc44; border-radius:2px; }
     .bar-fill { height:100%; border-radius:2px; transition:width .6s ease; }
     .conn-line { stroke:#00ffcc44; stroke-width:1.5; stroke-dasharray:6,4; animation:dash 3s linear infinite; }
-    @keyframes dash { to{stroke-dashoffset:-20;} }
+    @keyframes dash { to { stroke-dashoffset:-20; } }
     .log-row { padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:11px; }
     .blink { animation:blink 1s infinite; }
     @keyframes blink { 50%{opacity:0;} }
     .new-row { animation: highlight 2s ease-out; }
-    @keyframes highlight { 0% { background-color: rgba(255, 68, 68, 0.2); } 100% { background-color: transparent; } }
-    .typing-cursor { display: inline-block; width: 6px; height: 14px; background-color: #00ffcc; margin-left: 2px; vertical-align: middle; animation: blink 1s infinite; }
+    @keyframes highlight { 0% { background-color: rgba(255,68,68,0.2); } 100% { background-color: transparent; } }
+    .typing-cursor { display:inline-block; width:6px; height:14px; background-color:#00ffcc; margin-left:2px; vertical-align:middle; animation:blink 1s infinite; }
+    .thinking { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -54,9 +56,10 @@
 <!-- ===== TAB 1: 全景监控台 ===== -->
 <div id="tab-monitor" class="tab-content active p-4" style="min-height:calc(100vh - 56px)">
   <div class="grid grid-cols-12 gap-4 h-full">
+
     <!-- 左栏 -->
     <div class="col-span-3 flex flex-col gap-4">
-      <div class="glass p-4 rounded-xl relative overflow-hidden">
+      <div class="glass p-4 rounded-xl">
         <h2 class="text-sm font-bold neon mb-1">⚡ 评委快速演示 (Judge Demo)</h2>
         <p class="text-xs text-gray-500 mb-3">点击预设攻击向量，体验物理气隙熔断全流程。</p>
         <div class="space-y-2">
@@ -76,7 +79,7 @@
             <div class="text-sm font-bold text-white">✂️ 向量4：用户指令断网</div>
             <div class="text-xs text-gray-500 mt-0.5">语音/文字指令触发极速路由响应</div>
           </button>
-          <button onclick="resetSystem()" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-700 hover:border-green-500 transition-all mt-2">
+          <button onclick="resetSystem()" class="w-full p-3 rounded-lg bg-gray-900 border border-gray-700 hover:border-green-500 transition-all mt-2">
             <div class="text-sm font-bold text-green-400 text-center">🔄 重置系统状态</div>
           </button>
         </div>
@@ -112,22 +115,25 @@
       <div class="glass rounded-xl flex flex-col overflow-hidden" style="height:calc(100vh - 90px)">
         <div class="bg-gray-900/80 px-4 py-3 border-b border-gray-800 flex justify-between items-center shrink-0">
           <span class="text-sm font-bold text-white mono">J.A.R.V.I.S 混合路由中枢</span>
-          <span class="text-xs px-2 py-1 bg-green-900/30 text-green-400 border border-green-800 rounded mono">Qwen2.5 7B Active</span>
+          <div class="flex items-center gap-2">
+            <span id="model-status-dot" class="w-2 h-2 rounded-full bg-green-400 blink"></span>
+            <span id="model-status-text" class="text-xs px-2 py-1 bg-green-900/30 text-green-400 border border-green-800 rounded mono">Qwen2.5 7B Active</span>
+          </div>
         </div>
         <div id="chat-output" class="flex-1 overflow-y-auto p-5 space-y-5 bg-black/30">
           <div class="flex gap-3">
             <div class="w-8 h-8 rounded bg-[#00ffcc]/20 border border-[#00ffcc] flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div>
             <div class="flex-1">
               <div class="text-xs text-gray-500 mb-1 mono">SYSTEM_INIT | 00:00:00</div>
-              <div class="text-sm text-gray-300 leading-relaxed">您好，Ethan。我是 J.A.R.V.I.S 边缘可信中控智能体。<br><br>本系统采用 <strong class="text-white">双路径异构拓扑 (Dual-Path Heterogeneous Topology) + 大模型深度推理</strong> 的混合架构。通过硬件级物理气隙隔离，实现 <strong class="text-white">确定性隐私 (Deterministic Privacy)</strong> 与零数据泄露。<br><br>您可以点击左侧演示攻击，并在攻击后向我询问安全排查建议。</div>
+              <div class="text-sm text-gray-300 leading-relaxed">您好，Ethan。我是 J.A.R.V.I.S 边缘可信中控智能体。<br><br>本系统采用 <strong class="text-white">双路径异构拓扑 + 大模型深度推理</strong> 的混合架构，通过硬件级物理气隙实现 <strong class="text-white">确定性隐私</strong> 与零数据泄露。<br><br>您可以点击左侧触发攻击演示，或直接向我提问任何安全问题。</div>
             </div>
           </div>
         </div>
-        <!-- 输入区域 (含提示字典) -->
+        <!-- 输入区域 -->
         <div class="bg-gray-900/80 border-t border-gray-800 shrink-0 flex flex-col">
-          <div class="px-4 pt-2 pb-1 text-xs mono flex gap-5 border-b border-gray-800/50 bg-black/20">
-            <span class="text-gray-400"><span class="text-blue-400 font-bold">⚡极速指令:</span> 断网 / 恢复网络</span>
-            <span class="text-gray-400"><span class="text-purple-400 font-bold">🧠安全管家:</span> 如何处理这次攻击？ / 帮我溯源 / 你的建议是？</span>
+          <div class="px-4 pt-2 pb-1 text-xs mono flex gap-5 border-b border-gray-800/50 bg-black/20 flex-wrap">
+            <span class="text-gray-400"><span class="text-blue-400 font-bold">⚡极速指令(0ms):</span> 断网 / 恢复网络 / 开灯 / 关灯</span>
+            <span class="text-gray-400"><span class="text-purple-400 font-bold">🧠安全管家(AI):</span> 如何处理这次攻击？/ 帮我溯源 / 风险评估</span>
           </div>
           <div class="p-3">
             <div class="flex gap-2 items-center bg-black border border-gray-700 p-1.5 rounded-lg focus-within:border-[#00ffcc] transition-colors">
@@ -152,6 +158,7 @@
           <div class="log-row text-gray-400">[SYSTEM] 嗅探器线程就绪 (CPU/Temp/Net/SSH)</div>
           <div class="log-row text-[#00ffcc]">[SNIFFER] 基线自适应校准完成</div>
           <div class="log-row text-gray-400">[JARVIS] Qwen2.5 7B 模型加载完毕</div>
+          <div class="log-row text-[#00ffcc]">[API] 云端推理通道就绪 (Vercel Serverless)</div>
         </div>
       </div>
     </div>
@@ -164,7 +171,7 @@
   <div class="grid grid-cols-4 gap-4 mb-6">
     <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">今日拦截事件</div><div class="text-3xl font-bold neon mono" id="stat-intercepts">47</div></div>
     <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">物理熔断次数</div><div class="text-3xl font-bold text-orange-400 mono" id="stat-lockdowns">3</div></div>
-    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">平均响应时延</div><div class="text-3xl font-bold text-blue-400 mono">< 5ms</div></div>
+    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">平均响应时延</div><div class="text-3xl font-bold text-blue-400 mono">&lt; 5ms</div></div>
     <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">系统安全评分</div><div class="text-3xl font-bold neon mono">98/100</div></div>
   </div>
   <div class="grid grid-cols-3 gap-6">
@@ -239,7 +246,7 @@
       <thead><tr class="text-gray-500 bg-gray-900/50"><th class="p-3">时间戳</th><th class="p-3">级别</th><th class="p-3">模块</th><th class="p-3">事件描述</th><th class="p-3">结果</th></tr></thead>
       <tbody id="audit-tbody">
         <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33.821</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">SSH_SNIFFER</td><td class="p-3 text-white">检测到 SSH 暴力破解，60s内失败登录 5 次</td><td class="p-3 text-green-400">物理熔断</td></tr>
-        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33.834</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">AIRGAP_CTRL</td><td class="p-3 text-white">触发硬件级继电器断电，广域网物理隔离 (< 5ms)</td><td class="p-3 text-green-400">执行成功</td></tr>
+        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33.834</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">AIRGAP_CTRL</td><td class="p-3 text-white">触发硬件级继电器断电，广域网物理隔离 (&lt; 5ms)</td><td class="p-3 text-green-400">执行成功</td></tr>
         <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:18:07.443</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">CPU_SNIFFER</td><td class="p-3 text-white">CPU 占用率持续 10s 超过阈值 (99.9%)</td><td class="p-3 text-green-400">物理熔断</td></tr>
         <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">00:48:22.100</td><td class="p-3 text-blue-400 font-bold">SYSTEM</td><td class="p-3 text-gray-300">JARVIS_ROUTER</td><td class="p-3 text-white">用户指令"断网"命中极速路由规则，跳过云端依赖</td><td class="p-3 text-green-400">执行成功</td></tr>
       </tbody>
@@ -248,10 +255,9 @@
 </div>
 
 <script>
-  // 时钟
-  setInterval(()=>{ document.getElementById('clock').innerText = new Date().toTimeString().split(' ')[0]; },1000);
+  // ===================== 基础工具 =====================
+  setInterval(()=>{ document.getElementById('clock').innerText = new Date().toTimeString().split(' ')[0]; }, 1000);
 
-  // Tab 切换逻辑
   function switchTab(name, btn){
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -259,7 +265,6 @@
     btn.classList.add('active');
   }
 
-  // 实时终端日志
   function addLog(msg, type='info'){
     const term = document.getElementById('terminal-logs');
     const div = document.createElement('div');
@@ -271,51 +276,38 @@
     term.scrollTop = term.scrollHeight;
   }
 
-  // 动态添加威胁事件
-  function addThreatEvent(type, source, severity, status, statusColor) {
+  function addThreatEvent(type, source, severity, status, statusColor){
     const tbody = document.getElementById('threat-tbody');
     const tr = document.createElement('tr');
-    tr.className = 'border-b border-gray-900 new-row'; 
+    tr.className = 'border-b border-gray-900 new-row';
     const t = new Date().toTimeString().split(' ')[0];
-    let sevHtml = severity === 'CRITICAL' ? `<span class="text-red-400 font-bold">CRITICAL</span>` : 
-                  severity === 'HIGH' ? `<span class="text-orange-400 font-bold">HIGH</span>` : 
-                  `<span class="text-yellow-400 font-bold">${severity}</span>`;
-    
+    const sevHtml = severity==='CRITICAL'?`<span class="text-red-400 font-bold">CRITICAL</span>`:severity==='HIGH'?`<span class="text-orange-400 font-bold">HIGH</span>`:`<span class="text-yellow-400 font-bold">${severity}</span>`;
     tr.innerHTML = `<td class="p-3 text-gray-400">${t}</td><td class="p-3 text-white">${type}</td><td class="p-3 text-gray-400">${source}</td><td class="p-3">${sevHtml}</td><td class="p-3 ${statusColor}">${status}</td>`;
     tbody.insertBefore(tr, tbody.firstChild);
-    
-    const countEl = document.getElementById('stat-intercepts');
-    countEl.innerText = parseInt(countEl.innerText) + 1;
+    document.getElementById('stat-intercepts').innerText = parseInt(document.getElementById('stat-intercepts').innerText) + 1;
   }
 
-  // 动态添加审计日志
-  function addAuditEvent(level, module, desc, result, resultColor) {
+  function addAuditEvent(level, module, desc, result, resultColor){
     const tbody = document.getElementById('audit-tbody');
     const tr = document.createElement('tr');
     tr.className = 'border-b border-gray-900 new-row';
     const date = new Date();
-    const t = date.toTimeString().split(' ')[0] + '.' + String(date.getMilliseconds()).padStart(3, '0');
-    
-    let levelHtml = level === 'CRITICAL' ? `<span class="text-red-400 font-bold">CRITICAL</span>` : 
-                    level === 'SYSTEM' ? `<span class="text-blue-400 font-bold">SYSTEM</span>` :
-                    level === 'HIGH' ? `<span class="text-orange-400 font-bold">HIGH</span>` :
-                    `<span class="text-yellow-400 font-bold">${level}</span>`;
-
+    const t = date.toTimeString().split(' ')[0] + '.' + String(date.getMilliseconds()).padStart(3,'0');
+    const levelHtml = level==='CRITICAL'?`<span class="text-red-400 font-bold">CRITICAL</span>`:level==='SYSTEM'?`<span class="text-blue-400 font-bold">SYSTEM</span>`:level==='HIGH'?`<span class="text-orange-400 font-bold">HIGH</span>`:`<span class="text-yellow-400 font-bold">${level}</span>`;
     tr.innerHTML = `<td class="p-3 text-gray-400">${t}</td><td class="p-3">${levelHtml}</td><td class="p-3 text-gray-300">${module}</td><td class="p-3 text-white">${desc}</td><td class="p-3 ${resultColor}">${result}</td>`;
     tbody.insertBefore(tr, tbody.firstChild);
   }
 
-  // 聊天消息渲染
+  // ===================== 聊天渲染 =====================
   function appendChat(role, content, isTicket=false){
     const box = document.getElementById('chat-output');
     const wrap = document.createElement('div');
     const t = new Date().toTimeString().split(' ')[0];
-    
     if(role === 'user'){
       wrap.className = 'flex gap-3 flex-row-reverse';
       wrap.innerHTML = `<div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center shrink-0 text-white text-xs font-bold">U</div><div class="flex-1 text-right"><div class="text-xs text-gray-500 mb-1 mono">${t}</div><div class="inline-block bg-gray-800 text-white text-sm px-4 py-2 rounded-lg rounded-tr-none">${content}</div></div>`;
     } else {
-      let body = isTicket
+      const body = isTicket
         ? `<div class="bg-red-900/20 border border-red-500/40 rounded-lg p-4 mt-1"><div class="text-red-400 font-bold text-sm mb-3 border-b border-red-500/30 pb-2">⚠ 离线安全威胁评估报告 (Incident Report)</div><div class="grid grid-cols-2 gap-3 mb-3 text-xs"><div><div class="text-gray-500">威胁等级</div><div class="text-red-400 mono font-bold">CRITICAL</div></div><div><div class="text-gray-500">隔离状态</div><div class="neon mono font-bold">AIR-GAP ISOLATED</div></div></div><div class="space-y-2 text-sm text-gray-300">${content}</div><div class="mt-3 pt-2 border-t border-red-500/20 text-xs text-gray-500">输入 <span class="neon mono">恢复网络</span> 解除物理熔断</div></div>`
         : `<div class="text-sm text-gray-300 leading-relaxed chat-body">${content}</div>`;
       wrap.className = 'flex gap-3';
@@ -326,271 +318,269 @@
     return wrap.querySelector('.chat-body');
   }
 
-  // 大模型打字机流式输出模拟
-  function typeWriterEffect(el, text) {
+  // ===================== 打字机特效 =====================
+  function typeWriterEffect(el, text){
+    if(!el) return;
     el.innerHTML = '';
     let i = 0;
-    const timer = setInterval(() => {
-      if(i < text.length) {
+    const timer = setInterval(()=>{
+      if(i < text.length){
         el.innerHTML = text.substring(0, i+1) + '<span class="typing-cursor"></span>';
         i++;
         document.getElementById('chat-output').scrollTop = document.getElementById('chat-output').scrollHeight;
       } else {
         clearInterval(timer);
-        el.innerHTML = text; // 移除光标
-        const costTime = text.length * 25 + 300; 
-        addLog(`[JARVIS] 本地大模型推理完成 (耗时: ${costTime}ms)`, 'success');
+        el.innerHTML = text;
       }
-    }, 30); 
+    }, 28);
   }
 
-  // --- 核心：状态感知的智能安全管家引擎 ---
-  let lastAttackType = ''; // 记忆上一次发生的攻击类型
+  // ===================== 系统状态 =====================
+  let sysState = { relay:'ONLINE', attacking:false, challenge:false };
+  let lastAttackType = '';
+  let isAIThinking = false;
 
-  function generateSmartResponse(input) {
+  // ===================== 真实大模型 API 调用 =====================
+  async function callJarvisAI(userMessage){
+    // 构建传给后端的上下文
+    const attackContext = lastAttackType
+      ? `当前系统刚刚遭受了【${
+          lastAttackType==='ssh'?'SSH暴力破解':
+          lastAttackType==='cpu'?'算力满载/恶意挖矿':
+          lastAttackType==='udp'?'UDP Flood网络流量激增':
+          '用户主动断网'
+        }】攻击，物理气隙继电器已触发熔断，广域网已物理隔离。`
+      : '当前系统运行平稳，未检测到活跃威胁。';
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          attackContext: attackContext,
+          relayStatus: sysState.relay
+        })
+      });
+      if(!res.ok) throw new Error('API error');
+      const data = await res.json();
+      return data.reply || '推理完成，但未获得有效回复。';
+    } catch(err) {
+      // 降级兜底：API 不可用时的本地回复
+      addLog('[API] 云端通道异常，切换至本地知识库兜底模式', 'warn');
+      return fallbackResponse(userMessage);
+    }
+  }
+
+  // 本地兜底知识库（API 不可用时使用）
+  function fallbackResponse(input){
     const text = input.toLowerCase();
-    
-    // 1. 安全排查与建议逻辑 (基于上下文状态)
-    if (text.includes('处理') || text.includes('怎么办') || text.includes('建议') || text.includes('溯源') || text.includes('分析')) {
-      if (lastAttackType === 'ssh') {
-        return "Ethan，针对刚刚发生的 <strong class='text-white'>SSH 暴力破解</strong>，物理气隙已成功切断外网连接，阻止了提权风险。<br><br>基于第一性原理，我建议您采取以下排查措施：<br>1. 立即修改默认的 22 端口；<br>2. 禁用 Root 密码登录，强制使用 RSA/Ed25519 密钥认证；<br>3. 我已在本地局域网为您生成了 Fail2ban 策略草稿，准备永久封禁来源 IP 192.168.1.105。<br><br>系统目前处于绝对安全状态，请问是否需要我执行上述策略？";
-      } 
-      else if (lastAttackType === 'cpu') {
-        return "Ethan，关于刚才的 <strong class='text-white'>算力异常满载</strong>，物理熔断机制已有效防止了硬件过热与潜在的挖矿数据外传。<br><br>我的排查建议如下：<br>1. 登录本地终端，使用 <code>htop</code> 锁定 PID:4821 的父进程；<br>2. 检查 <code>/var/spool/cron</code> 是否被植入恶意定时任务；<br>3. 隔离受感染的 Docker 容器。<br><br>在您完成本地排查前，建议维持当前的物理断网状态。";
-      }
-      else if (lastAttackType === 'udp') {
-        return "Ethan，针对刚才的 <strong class='text-white'>UDP Flood 流量激增</strong>，物理隔离已瞬间切断了数据外泄通道。<br><br>这通常意味着局域网内有 IoT 设备被僵尸网络（如 Mirai）感染。我的建议是：<br>1. 逐一排查局域网内网络摄像头的固件版本；<br>2. 在本地路由器层面对异常 MAC 地址进行过滤；<br>3. 检查是否有未授权的内网穿透服务。<br><br>需要我为您扫描当前局域网的存活节点吗？";
-      }
-      else {
-        return "Ethan，目前系统运行平稳，未检测到任何正在发生的攻击。物理气隙继电器处于 ONLINE 状态，边缘节点的 CPU 与温度均在正常阈值内。如果您想测试我的应急响应能力，请先在左侧触发一个模拟攻击。";
-      }
+    if(text.includes('处理')||text.includes('建议')||text.includes('怎么办')||text.includes('溯源')){
+      if(lastAttackType==='ssh') return "针对 SSH 暴力破解：建议立即修改默认 22 端口，禁用密码登录并强制 RSA 密钥认证，同时永久封禁来源 IP 192.168.1.105。物理气隙已确保攻击者无法进一步渗透。";
+      if(lastAttackType==='cpu') return "针对算力满载攻击：建议使用 htop 定位 PID:4821 的父进程，检查 /var/spool/cron 是否存在恶意定时任务，并隔离可疑 Docker 容器。在排查完成前请维持断网状态。";
+      if(lastAttackType==='udp') return "针对 UDP Flood：建议排查局域网内 IoT 设备固件版本，在路由器层面过滤异常 MAC 地址，检查是否存在未授权的内网穿透服务（如 frp/ngrok）。";
+      return "当前系统状态平稳，无活跃威胁。请先在左侧触发一个攻击演示，我将基于实际攻击类型给出针对性建议。";
     }
-
-    // 2. 基础知识库逻辑
-    if (text.includes('你是谁') || text.includes('介绍') || text.includes('jarvis')) {
-      return "您好，Ethan。我是 J.A.R.V.I.S 边缘可信中控系统。我由您及核心团队研发，旨在通过硬件级物理气隙（Air-Gap）机制与本地大模型推理，彻底解决智能家居与高密办公场景下的隐私泄露问题。";
-    }
-    if (text.includes('核心技术') || text.includes('原理') || text.includes('架构')) {
-      return "本系统的核心技术在于“双路径异构拓扑”。我们将广域网（WAN）与局域网（LAN）在物理层解耦。当检测到威胁时，系统能在 <5ms 内切断广域网继电器的供电，实现绝对的物理隔离，同时通过本地 Qwen2.5 模型与 Zigbee 协议，保持局域网内的智能控制不中断。";
-    }
-    
-    // 默认兜底回复
-    return `这是一个非常专业的问题。在当前的边缘计算架构下，我优先保障确定性隐私与本地控制闭环。关于“${input}”的更多细节，我的本地知识库正在持续学习中。`;
+    if(text.includes('你是谁')||text.includes('介绍')) return "我是 J.A.R.V.I.S，由 Ethan 研发的边缘可信中控系统。采用双路径异构拓扑与硬件级物理气隙技术，实现确定性隐私保护。";
+    return `关于"${input}"，我的本地知识库正在处理中。如需深度分析，请确保网络连接正常以启用云端推理。`;
   }
 
-  // 触发熔断 UI
-  let sysState = {relay:'ONLINE', attacking:false, challenge:false};
-
+  // ===================== 熔断 UI =====================
   function triggerLockdown(){
     sysState.relay = 'SEVERED';
-    const box = document.getElementById('relay-box');
-    const txt = document.getElementById('relay-text');
-    box.className = 'border border-red-500 p-3 text-center rounded-lg bg-red-500/10 transition-all duration-500 blink';
-    txt.className = 'text-xl font-bold neon-red mono tracking-widest';
-    txt.innerText = 'SEVERED (熔断)';
+    document.getElementById('relay-box').className = 'border border-red-500 p-3 text-center rounded-lg bg-red-500/10 transition-all duration-500 blink';
+    document.getElementById('relay-text').className = 'text-xl font-bold neon-red mono tracking-widest';
+    document.getElementById('relay-text').innerText = 'SEVERED (熔断)';
     document.getElementById('sys-status').className = 'text-red-400';
     document.getElementById('sys-status').innerText = '● LOCKDOWN';
-    
     const tr = document.getElementById('topo-relay');
-    if(tr){ tr.innerText = '● OPEN'; tr.className = 'text-red-400 mono'; }
-    
-    const wanLine = document.getElementById('wan-line');
-    if(wanLine) wanLine.setAttribute('stroke', '#ff4444');
-    
-    addLog('[CRITICAL] 硬件级物理继电器断电！广域网(WAN)物理隔离！', 'error');
-
-    const countEl = document.getElementById('stat-lockdowns');
-    countEl.innerText = parseInt(countEl.innerText) + 1;
-    addAuditEvent('CRITICAL', 'AIRGAP_CTRL', '触发硬件级继电器断电，广域网物理隔离 (< 5ms)', '执行成功', 'text-green-400');
+    if(tr){ tr.innerText='● OPEN'; tr.className='text-red-400 mono'; }
+    const wl = document.getElementById('wan-line');
+    if(wl) wl.setAttribute('stroke','#ff4444');
+    addLog('[CRITICAL] 硬件级物理继电器断电！广域网(WAN)物理隔离！','error');
+    document.getElementById('stat-lockdowns').innerText = parseInt(document.getElementById('stat-lockdowns').innerText) + 1;
+    addAuditEvent('CRITICAL','AIRGAP_CTRL','触发硬件级继电器断电，广域网物理隔离 (< 5ms)','执行成功','text-green-400');
   }
 
-  // 重置系统
+  // ===================== 重置系统 =====================
   function resetSystem(){
-    sysState = {relay:'ONLINE', attacking:false, challenge:false};
-    lastAttackType = ''; // 重置攻击记忆
-    const box = document.getElementById('relay-box');
-    const txt = document.getElementById('relay-text');
-    box.className = 'border border-[#00ffcc] p-3 text-center rounded-lg bg-[#00ffcc]/10 transition-all duration-500';
-    txt.className = 'text-xl font-bold neon mono tracking-widest';
-    txt.innerText = 'ONLINE';
-    
+    sysState = { relay:'ONLINE', attacking:false, challenge:false };
+    lastAttackType = '';
+    document.getElementById('relay-box').className = 'border border-[#00ffcc] p-3 text-center rounded-lg bg-[#00ffcc]/10 transition-all duration-500';
+    document.getElementById('relay-text').className = 'text-xl font-bold neon mono tracking-widest';
+    document.getElementById('relay-text').innerText = 'ONLINE';
     document.getElementById('cpu-bar').className = 'bar-fill bg-[#00ffcc]';
     document.getElementById('cpu-bar').style.width = '12%';
     document.getElementById('cpu-text').innerText = '12.0%';
     document.getElementById('cpu-text').className = 'neon';
-    
     document.getElementById('net-bar').className = 'bar-fill bg-[#00ffcc]';
     document.getElementById('net-bar').style.width = '5%';
     document.getElementById('net-text').innerText = '0.02MB/s';
     document.getElementById('net-text').className = 'neon';
-
     document.getElementById('sys-status').className = 'text-green-400';
     document.getElementById('sys-status').innerText = '● SYSTEM ONLINE';
-    
     const tr = document.getElementById('topo-relay');
-    if(tr){ tr.innerText = '● CLOSED'; tr.className = 'text-green-400 mono'; }
-    
-    const wanLine = document.getElementById('wan-line');
-    if(wanLine) wanLine.setAttribute('stroke', '#00ffcc44');
-
-    appendChat('ai', '✅ 系统已重置，广域网继电器重新吸合，安全状态已恢复。');
-    addLog('[SYSTEM] 系统状态已重置', 'success');
-    addAuditEvent('SYSTEM', 'AIRGAP_CTRL', '系统重置，广域网继电器重新闭合', '执行成功', 'text-green-400');
+    if(tr){ tr.innerText='● CLOSED'; tr.className='text-green-400 mono'; }
+    const wl = document.getElementById('wan-line');
+    if(wl) wl.setAttribute('stroke','#00ffcc44');
+    appendChat('ai','✅ 系统已重置，广域网继电器重新吸合，安全状态已恢复。');
+    addLog('[SYSTEM] 系统状态已重置','success');
+    addAuditEvent('SYSTEM','AIRGAP_CTRL','系统重置，广域网继电器重新闭合','执行成功','text-green-400');
   }
 
-  // 攻击模拟
+  // ===================== 攻击模拟 =====================
   function simulateAttack(type){
-    if(sysState.relay === 'SEVERED'){
-      appendChat('ai', '⚠️ 系统已处于熔断状态。请先输入 <span class="neon mono">恢复网络</span> 或点击【重置系统状态】解除。');
-      return;
-    }
+    if(sysState.relay==='SEVERED'){ appendChat('ai','⚠️ 系统已处于熔断状态，请先输入 <span class="neon mono">恢复网络</span> 或点击【重置系统状态】解除。'); return; }
     if(sysState.attacking) return;
     sysState.attacking = true;
-    lastAttackType = type; // 记录当前攻击类型供大模型分析使用
+    lastAttackType = type;
 
-    if(type === 'cpu'){
-      appendChat('user', '【评委模拟】执行算力满载攻击脚本...');
-      addLog('[嗅探器] 检测到 CPU 异常飙升...', 'warn');
-      let c = 12, ti = 0;
-      const iv = setInterval(()=>{
-        c = Math.min(c+18, 99.9); ti++;
-        document.getElementById('cpu-text').innerText = c.toFixed(1)+'%';
-        document.getElementById('cpu-bar').style.width = c+'%';
-        document.getElementById('cpu-bar').className = 'bar-fill bg-red-500';
-        document.getElementById('cpu-text').className = 'text-red-400 font-bold';
-        addLog(`[嗅探器 CPU] 高负载持续 (${c.toFixed(1)}%)，超过阈值！`, 'warn');
-        if(ti >= 5){ 
-          clearInterval(iv); 
-          addThreatEvent('算力异常满载', 'PID:4821', 'CRITICAL', '✓ 物理熔断', 'text-green-400');
-          addAuditEvent('CRITICAL', 'CPU_SNIFFER', 'CPU 占用率持续 10s 超过阈值 (99.9%)', '物理熔断', 'text-green-400');
+    if(type==='cpu'){
+      appendChat('user','【评委模拟】执行算力满载攻击脚本...');
+      addLog('[嗅探器] 检测到 CPU 异常飙升...','warn');
+      let c=12, ti=0;
+      const iv=setInterval(()=>{
+        c=Math.min(c+18,99.9); ti++;
+        document.getElementById('cpu-text').innerText=c.toFixed(1)+'%';
+        document.getElementById('cpu-bar').style.width=c+'%';
+        document.getElementById('cpu-bar').className='bar-fill bg-red-500';
+        document.getElementById('cpu-text').className='text-red-400 font-bold';
+        addLog(`[嗅探器 CPU] 高负载持续 (${c.toFixed(1)}%)，超过阈值！`,'warn');
+        if(ti>=5){
+          clearInterval(iv);
+          addThreatEvent('算力异常满载','PID:4821','CRITICAL','✓ 物理熔断','text-green-400');
+          addAuditEvent('CRITICAL','CPU_SNIFFER','CPU 占用率持续 10s 超过阈值 (99.9%)','物理熔断','text-green-400');
           triggerLockdown();
-          setTimeout(()=>{
-            appendChat('ai', `<div><span class="text-gray-400">拦截原因：</span>CPU 持续满载 (99.9%)，时长超阈值</div><div class="mt-2"><span class="text-gray-400">AI 分析：</span>疑似恶意挖矿脚本注入，PID:4821</div>`, true);
-            sysState.attacking = false;
-          }, 800);
+          setTimeout(()=>{ appendChat('ai',`<div><span class="text-gray-400">拦截原因：</span>CPU 持续满载 (99.9%)，时长超阈值</div><div class="mt-2"><span class="text-gray-400">AI 分析：</span>疑似恶意挖矿脚本注入，PID:4821。可向我询问处理建议。</div>`,true); sysState.attacking=false; },800);
         }
-      }, 300);
+      },300);
     }
 
-    if(type === 'ssh'){
-      appendChat('user', '【评委模拟】执行 SSH 字典暴力破解...');
-      let count = 0;
-      const iv = setInterval(()=>{
+    if(type==='ssh'){
+      appendChat('user','【评委模拟】执行 SSH 字典暴力破解...');
+      let count=0;
+      const iv=setInterval(()=>{
         count++;
-        addLog(`[嗅探器 SSH] 检测到失败登录，来源 IP: 192.168.1.105，累计 ${count} 次`, 'warn');
-        if(count >= 5){
-          clearInterval(iv); 
-          addThreatEvent('SSH 暴力破解', '192.168.1.105', 'CRITICAL', '✓ 物理熔断', 'text-green-400');
-          addAuditEvent('CRITICAL', 'SSH_SNIFFER', '检测到 SSH 暴力破解，60s内失败登录 5 次', '物理熔断', 'text-green-400');
+        addLog(`[嗅探器 SSH] 检测到失败登录，来源 IP: 192.168.1.105，累计 ${count} 次`,'warn');
+        if(count>=5){
+          clearInterval(iv);
+          addThreatEvent('SSH 暴力破解','192.168.1.105','CRITICAL','✓ 物理熔断','text-green-400');
+          addAuditEvent('CRITICAL','SSH_SNIFFER','检测到 SSH 暴力破解，60s内失败登录 5 次','物理熔断','text-green-400');
           triggerLockdown();
-          setTimeout(()=>{
-            appendChat('ai', `<div><span class="text-gray-400">拦截原因：</span>非法入侵嗅探 (60秒内 5 次尝试)</div><div class="mt-2"><span class="text-gray-400">AI 分析：</span>遭受高频 SSH 字典攻击，存在提权风险。</div>`, true);
-            sysState.attacking = false;
-          }, 800);
+          setTimeout(()=>{ appendChat('ai',`<div><span class="text-gray-400">拦截原因：</span>非法入侵嗅探 (60秒内 5 次尝试)</div><div class="mt-2"><span class="text-gray-400">AI 分析：</span>遭受高频 SSH 字典攻击，存在提权风险。可向我询问处理建议。</div>`,true); sysState.attacking=false; },800);
         }
-      }, 250);
+      },250);
     }
 
-    if(type === 'udp'){
-      appendChat('user', '【评委模拟】执行 UDP Flood 网络流量激增攻击...');
-      addLog('[嗅探器] 检测到异常出站流量突增...', 'warn');
-      let netVal = 0.02, ti = 0;
-      const iv = setInterval(()=>{
-        netVal = netVal * 4 + Math.random() * 10; 
-        ti++;
-        document.getElementById('net-text').innerText = netVal.toFixed(1) + 'MB/s';
-        document.getElementById('net-bar').style.width = Math.min((netVal/50)*100, 100) + '%';
-        document.getElementById('net-bar').className = 'bar-fill bg-red-500';
-        document.getElementById('net-text').className = 'text-red-400 font-bold';
-        addLog(`[嗅探器 NET] 异常流量持续 (${netVal.toFixed(1)}MB/s)，远超基线！`, 'warn');
-        if(ti >= 5){
-          clearInterval(iv); 
-          addThreatEvent('异常出站流量', 'wlan0 → 外网', 'HIGH', '✓ 流量截断', 'text-green-400');
-          addAuditEvent('HIGH', 'NET_SNIFFER', '出站流量异常突增，超过基线阈值 620 倍', '流量截断', 'text-green-400');
+    if(type==='udp'){
+      appendChat('user','【评委模拟】执行 UDP Flood 网络流量激增攻击...');
+      addLog('[嗅探器] 检测到异常出站流量突增...','warn');
+      let netVal=0.02, ti=0;
+      const iv=setInterval(()=>{
+        netVal=netVal*4+Math.random()*10; ti++;
+        document.getElementById('net-text').innerText=netVal.toFixed(1)+'MB/s';
+        document.getElementById('net-bar').style.width=Math.min((netVal/50)*100,100)+'%';
+        document.getElementById('net-bar').className='bar-fill bg-red-500';
+        document.getElementById('net-text').className='text-red-400 font-bold';
+        addLog(`[嗅探器 NET] 异常流量持续 (${netVal.toFixed(1)}MB/s)，远超基线！`,'warn');
+        if(ti>=5){
+          clearInterval(iv);
+          addThreatEvent('异常出站流量','wlan0 → 外网','HIGH','✓ 流量截断','text-green-400');
+          addAuditEvent('HIGH','NET_SNIFFER','出站流量异常突增，超过基线阈值 620 倍','流量截断','text-green-400');
           triggerLockdown();
-          setTimeout(()=>{
-            appendChat('ai', `<div><span class="text-gray-400">拦截原因：</span>网络流量激增 (UDP Flood)</div><div class="mt-2"><span class="text-gray-400">AI 分析：</span>检测到向未知 IP 的高频大数据包发送，疑似 DDoS 攻击或数据外发窃取。</div><div class="mt-2"><span class="text-gray-400">排查建议：</span>检查网络连接状态，拦截对应恶意 IP。</div>`, true);
-            sysState.attacking = false;
-          }, 800);
+          setTimeout(()=>{ appendChat('ai',`<div><span class="text-gray-400">拦截原因：</span>网络流量激增 (UDP Flood)</div><div class="mt-2"><span class="text-gray-400">AI 分析：</span>检测到向未知 IP 的高频大数据包发送，疑似 DDoS 或数据外发窃取。可向我询问处理建议。</div>`,true); sysState.attacking=false; },800);
         }
-      }, 350);
+      },350);
     }
 
-    if(type === 'net'){
-      appendChat('user', '断网');
-      addLog('[ROUTER] 极速指令命中: net_cut (耗时: 0.012ms)', 'success');
-      addThreatEvent('用户指令断网', '本地控制台', 'HIGH', '✓ 物理熔断', 'text-green-400');
-      addAuditEvent('SYSTEM', 'JARVIS_ROUTER', '用户指令"断网"命中极速路由规则，跳过云端依赖', '执行成功', 'text-green-400');
+    if(type==='net'){
+      appendChat('user','断网');
+      addLog('[ROUTER] 极速指令命中: net_cut (耗时: 0.012ms)','success');
+      addThreatEvent('用户指令断网','本地控制台','HIGH','✓ 物理熔断','text-green-400');
+      addAuditEvent('SYSTEM','JARVIS_ROUTER','用户指令"断网"命中极速路由规则，跳过云端依赖','执行成功','text-green-400');
       triggerLockdown();
-      appendChat('ai', '✅ 物理熔断已触发，已切入纯局域网绝对隐私模式。');
-      sysState.attacking = false;
+      appendChat('ai','✅ 物理熔断已触发，已切入纯局域网绝对隐私模式。');
+      sysState.attacking=false;
     }
   }
 
-  // 输入框处理
-  document.getElementById('btn-send').addEventListener('click', ()=>{
+  // ===================== 输入框主逻辑 =====================
+  document.getElementById('btn-send').addEventListener('click', async ()=>{
+    if(isAIThinking) return; // 防止重复提交
     const input = document.getElementById('cmd-input');
     const text = input.value.trim();
     if(!text) return;
     input.value = '';
     appendChat('user', text);
 
-    // 极速指令分支
-    if(text === '断网') simulateAttack('net');
-    else if(text === '开灯') {
-      addLog('[ROUTER] 极速指令命中: light_on (耗时: 0.015ms)', 'success');
-      appendChat('ai', '💡 收到指令，已通过本地 Zigbee 协议开启照明。');
+    // --- 极速指令分支（纯本地，0ms）---
+    if(text === '断网'){ simulateAttack('net'); return; }
+    if(text === '开灯'){
+      addLog('[ROUTER] 极速指令命中: light_on (耗时: 0.015ms)','success');
+      appendChat('ai','💡 收到指令，已通过本地 Zigbee 协议开启照明。');
+      return;
     }
-    else if(text === '关灯') {
-      addLog('[ROUTER] 极速指令命中: light_off (耗时: 0.014ms)', 'success');
-      appendChat('ai', '🌙 收到指令，已通过本地 Zigbee 协议关闭照明。');
+    if(text === '关灯'){
+      addLog('[ROUTER] 极速指令命中: light_off (耗时: 0.014ms)','success');
+      appendChat('ai','🌙 收到指令，已通过本地 Zigbee 协议关闭照明。');
+      return;
     }
-    else if(text === '恢复网络'){
-      if(sysState.relay === 'ONLINE'){ appendChat('ai', '当前网络已处于连接状态。'); return; }
-      addLog('[ROUTER] 极速指令命中: net_restore', 'success');
-      addLog('[AUTH] 触发动态口令挑战', 'warn');
-      appendChat('ai', '⚠️ 防录音回放机制已激活。<br>请在15秒内复述动态口令：<span class="text-yellow-400 font-bold tracking-widest text-lg ml-2">847291</span>');
+    if(text === '恢复网络'){
+      if(sysState.relay==='ONLINE'){ appendChat('ai','当前网络已处于连接状态。'); return; }
+      addLog('[ROUTER] 极速指令命中: net_restore','success');
+      addLog('[AUTH] 触发动态口令挑战','warn');
+      appendChat('ai','⚠️ 防录音回放机制已激活。<br>请在15秒内复述动态口令：<span class="text-yellow-400 font-bold tracking-widest text-lg ml-2">847291</span>');
       sysState.challenge = true;
+      return;
     }
-    else if(sysState.challenge && text.includes('847291')){
+    if(sysState.challenge && text.includes('847291')){
       sysState.challenge = false;
-      addLog('[AUTH] 动态口令验证通过', 'success');
-      addAuditEvent('SYSTEM', 'AUTH_MODULE', '动态口令验证通过，解除物理隔离', '验证通过', 'text-green-400');
+      addLog('[AUTH] 动态口令验证通过','success');
+      addAuditEvent('SYSTEM','AUTH_MODULE','动态口令验证通过，解除物理隔离','验证通过','text-green-400');
       resetSystem();
+      return;
     }
-    // 大模型语义对话分支 (知识库匹配 + 打字机模拟)
-    else {
-      addLog('[ROUTER] 极速路由未命中，唤醒本地 Qwen2.5 模型...', 'info');
-      
-      // 调用智能知识库引擎获取回复
-      const replyText = generateSmartResponse(text);
-      
-      // 创建一个空的聊天气泡
-      const msgNode = appendChat('ai', ''); 
-      
-      // 模拟 400ms 的模型加载延迟，然后开始打字
-      setTimeout(() => {
-        typeWriterEffect(msgNode, replyText);
-      }, 400);
-    }
+
+    // --- 真实大模型语义对话分支 ---
+    isAIThinking = true;
+    document.getElementById('btn-send').disabled = true;
+    document.getElementById('btn-send').innerText = '推理中...';
+    addLog('[ROUTER] 极速路由未命中，唤醒 Qwen2.5 模型...','info');
+
+    // 创建"思考中"气泡
+    const msgNode = appendChat('ai', '');
+    if(msgNode) msgNode.innerHTML = '<span class="thinking text-gray-500 mono text-xs">▌ 边缘推理中 (Inferencing)...</span>';
+
+    const startTime = Date.now();
+    const replyText = await callJarvisAI(text);
+    const costTime = Date.now() - startTime;
+
+    addLog(`[JARVIS] 大模型推理完成 (耗时: ${costTime}ms)`,'success');
+    addAuditEvent('SYSTEM','JARVIS_LLM',`用户问询: "${text.substring(0,20)}..."`,`推理完成 ${costTime}ms`,'text-green-400');
+
+    // 打字机特效输出
+    typeWriterEffect(msgNode, replyText);
+
+    isAIThinking = false;
+    document.getElementById('btn-send').disabled = false;
+    document.getElementById('btn-send').innerText = '执行 (Enter)';
   });
 
   document.getElementById('cmd-input').addEventListener('keypress', (e)=>{
-    if(e.key === 'Enter') document.getElementById('btn-send').click();
+    if(e.key==='Enter') document.getElementById('btn-send').click();
   });
 
-  // 随机波动数据模拟
+  // ===================== 遥测数据随机波动 =====================
   setInterval(()=>{
-    if(sysState.attacking || sysState.relay === 'SEVERED') return;
-    const cpu = (Math.random()*8+8).toFixed(1);
-    const temp = (Math.random()*2+42).toFixed(1);
-    const net = (Math.random()*0.05).toFixed(3);
-    
-    document.getElementById('cpu-text').innerText = cpu+'%';
-    document.getElementById('cpu-bar').style.width = cpu+'%';
-    document.getElementById('temp-text').innerText = temp+'°C';
-    document.getElementById('temp-bar').style.width = (temp/100*100)+'%';
-    document.getElementById('net-text').innerText = net+'MB/s';
+    if(sysState.attacking || sysState.relay==='SEVERED') return;
+    const cpu=(Math.random()*8+8).toFixed(1);
+    const temp=(Math.random()*2+42).toFixed(1);
+    const net=(Math.random()*0.05).toFixed(3);
+    document.getElementById('cpu-text').innerText=cpu+'%';
+    document.getElementById('cpu-bar').style.width=cpu+'%';
+    document.getElementById('temp-text').innerText=temp+'°C';
+    document.getElementById('temp-bar').style.width=(temp/100*100)+'%';
+    document.getElementById('net-text').innerText=net+'MB/s';
   }, 2500);
 </script>
 </body>
