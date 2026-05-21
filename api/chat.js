@@ -1,18 +1,34 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { message, attackContext, relayStatus } = req.body;
+  
+  const { message, attackContext } = req.body;
 
-  const systemPrompt = `你是 J.A.R.V.I.S，由天才开发者 Ethan（陈昱全）研发的边缘可信中控系统智能体。
-运行于 Raspberry Pi 5 + RTX 4060 边缘节点，采用双路径异构拓扑与硬件级物理气隙技术。
-当前系统状态：${attackContext}，继电器状态：${relayStatus}。
-回答要求：专业、冷静、简洁，结合第一性原理，给出具体可执行的安全建议。回复使用中文，不超过200字。`;
+  const systemPrompt = `你是 J.A.R.V.I.S，由天才开发者 Ethan 研发的边缘安全智能体。
+你目前正作为核心安全模型运行在本地边缘节点上。
+当前系统状态：${attackContext}
+请用客观、冷静、专业的语气回答，结合第一性原理给出安全排查建议。`;
 
-  const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.LLM_API_KEY}` },
-    body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }], temperature: 0.4 })
-  });
+  try {
+    // 这里换成了智谱 GLM 的官方通用接口地址
+    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': `Bearer ${process.env.LLM_API_KEY}` // 依然读取 Vercel 的环境变量
+      },
+      body: JSON.stringify({ 
+        model: 'glm-5.1', // 换成邮件里指定的模型名称
+        messages: [
+          { role: 'system', content: systemPrompt }, 
+          { role: 'user', content: message }
+        ], 
+        temperature: 0.3 
+      })
+    });
 
-  const data = await response.json();
-  res.status(200).json({ reply: data.choices[0].message.content });
+    const data = await response.json();
+    res.status(200).json({ reply: data.choices[0].message.content });
+  } catch (error) {
+    res.status(500).json({ reply: "边缘算力节点响应超时，请检查网络。" });
+  }
 }
