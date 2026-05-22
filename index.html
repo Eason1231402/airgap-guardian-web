@@ -3,420 +3,461 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>J.A.R.V.I.S Edge System | 边缘可信中控系统</title>
+  <title>J.A.R.V.I.S · 边缘智能安全系统</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { background:#050a0a; color:#e5e7eb; font-family: sans-serif; }
-    .mono { font-family: monospace; }
-    .neon { color:#00ffcc; text-shadow:0 0 8px #00ffcc88; }
+    * { box-sizing: border-box; }
+    body { background:#060c0c; color:#e5e7eb; font-family: 'PingFang SC','Microsoft YaHei',sans-serif; }
+    .mono { font-family: 'SF Mono','Fira Code',monospace; }
+    .neon { color:#00ffcc; text-shadow:0 0 10px #00ffcc66; }
     .neon-red { color:#ff4444; text-shadow:0 0 8px #ff444488; }
-    .glass { background:rgba(0,20,20,0.65); border:1px solid rgba(0,255,204,0.18); backdrop-filter:blur(10px); }
-    .tab-btn { padding:12px 18px; font-size:13px; cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; }
+    .glass { background:rgba(0,18,18,0.7); border:1px solid rgba(0,255,204,0.12); backdrop-filter:blur(16px); }
+    .card { background:rgba(10,20,20,0.8); border:1px solid rgba(255,255,255,0.06); border-radius:16px; }
+    .tab-btn { padding:14px 20px; font-size:14px; cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; white-space:nowrap; }
     .tab-btn.active { color:#00ffcc; border-bottom-color:#00ffcc; }
     .tab-btn:not(.active) { color:#6b7280; }
     .tab-btn:not(.active):hover { color:#d1d5db; }
     .tab-content { display:none; }
     .tab-content.active { display:block; }
-    ::-webkit-scrollbar { width:4px; height:4px; }
-    ::-webkit-scrollbar-thumb { background:#00ffcc44; border-radius:2px; }
-    .bar-fill { height:100%; border-radius:2px; transition:width .6s ease; }
-    .conn-line { stroke:#00ffcc44; stroke-width:1.5; stroke-dasharray:6,4; animation:dash 3s linear infinite; }
+    ::-webkit-scrollbar { width:3px; }
+    ::-webkit-scrollbar-thumb { background:#00ffcc33; border-radius:2px; }
+    .bar-fill { height:100%; border-radius:4px; transition:width .8s ease; }
+    .conn-line { stroke:#00ffcc33; stroke-width:1.5; stroke-dasharray:6,4; animation:dash 3s linear infinite; }
     @keyframes dash { to { stroke-dashoffset:-20; } }
-    .log-row { padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:11px; }
-    .blink { animation:blink 1s infinite; }
+    .log-row { padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:11px; line-height:1.6; }
+    .blink { animation:blink 1.4s infinite; }
     @keyframes blink { 50%{opacity:0;} }
-    .new-row { animation: highlight 2s ease-out; }
-    @keyframes highlight { 0%{background-color:rgba(255,68,68,0.2);}100%{background-color:transparent;} }
-    .typing-cursor { display:inline-block; width:6px; height:14px; background-color:#00ffcc; margin-left:2px; vertical-align:middle; animation:blink 1s infinite; }
-    .thinking { animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:0.4;} }
-    .mic-btn { transition: color .2s; }
+    .new-row { animation:highlight 2s ease-out; }
+    @keyframes highlight { 0%{background:rgba(255,68,68,0.15);}100%{background:transparent;} }
+    .typing-cursor { display:inline-block; width:5px; height:13px; background:#00ffcc; margin-left:2px; vertical-align:middle; animation:blink 1s infinite; }
+    .thinking { animation:pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:0.35;} }
     .mic-btn.listening { color:#ff4444; animation:pulse 1s infinite; }
-    @keyframes shake {
-      0%,100%{transform:translateX(0);}
-      20%{transform:translateX(-8px);}
-      40%{transform:translateX(8px);}
-      60%{transform:translateX(-6px);}
-      80%{transform:translateX(6px);}
-    }
-    /* 全屏遮罩统一用最高层级 */
-    .overlay-layer { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.92); backdrop-filter:blur(12px); display:flex; align-items:center; justify-content:center; }
-    .modal-layer  { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px);  display:flex; align-items:center; justify-content:center; }
-    .pin-dot { width:14px; height:14px; border-radius:50%; border:2px solid #00ffcc44; background:transparent; transition:all .2s; }
-    .pin-dot.filled { background:#00ffcc; border-color:#00ffcc; box-shadow:0 0 8px #00ffcc; }
-    .pin-key { width:64px; height:64px; border-radius:12px; background:#0a1a1a; border:1px solid #00ffcc22; color:#e5e7eb; font-size:20px; font-family:monospace; cursor:pointer; transition:all .15s; display:flex; align-items:center; justify-content:center; }
-    .pin-key:hover { background:#00ffcc22; border-color:#00ffcc88; color:#00ffcc; }
-    .pin-key:active { transform:scale(0.93); }
-    .voice-wave { display:flex; align-items:center; gap:3px; height:40px; }
-    .voice-bar { width:4px; border-radius:2px; background:#00ffcc; animation:wave 0.8s ease-in-out infinite; }
-    .voice-bar:nth-child(1){animation-delay:0s;height:8px;}
-    .voice-bar:nth-child(2){animation-delay:0.1s;height:20px;}
-    .voice-bar:nth-child(3){animation-delay:0.2s;height:32px;}
-    .voice-bar:nth-child(4){animation-delay:0.3s;height:24px;}
-    .voice-bar:nth-child(5){animation-delay:0.4s;height:16px;}
-    .voice-bar:nth-child(6){animation-delay:0.5s;height:28px;}
-    .voice-bar:nth-child(7){animation-delay:0.6s;height:12px;}
-    @keyframes wave { 0%,100%{transform:scaleY(0.4);opacity:0.5;}50%{transform:scaleY(1);opacity:1;} }
-    .badge-enrolled { background:#00ffcc18; border:1px solid #00ffcc44; color:#00ffcc; }
-    .badge-pending  { background:#f59e0b18; border:1px solid #f59e0b44; color:#f59e0b; }
-    .input-field { width:100%; background:#0a1a1a; border:1px solid #00ffcc22; border-radius:10px; padding:10px 14px; color:#e5e7eb; font-size:14px; outline:none; transition:border .2s; }
-    .input-field:focus { border-color:#00ffcc88; }
-    .input-field::placeholder { color:#4b5563; }
-    .btn-primary { background:#00ffcc; color:#000; font-weight:700; border-radius:10px; padding:10px 0; width:100%; font-size:14px; font-family:monospace; cursor:pointer; transition:background .2s; }
-    .btn-primary:hover { background:#fff; }
-    .step-indicator { display:flex; gap:8px; justify-content:center; margin-bottom:20px; }
-    .step-dot { width:8px; height:8px; border-radius:50%; background:#1f2937; transition:all .3s; }
-    .step-dot.active { background:#00ffcc; box-shadow:0 0 6px #00ffcc; }
+    @keyframes shake { 0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);} }
+    .overlay-layer { position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.93);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center; }
+    .modal-layer { position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.78);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center; }
+    .pin-dot { width:13px;height:13px;border-radius:50%;border:2px solid #00ffcc33;background:transparent;transition:all .2s; }
+    .pin-dot.filled { background:#00ffcc;border-color:#00ffcc;box-shadow:0 0 10px #00ffcc88; }
+    .pin-key { width:64px;height:64px;border-radius:14px;background:#0a1a1a;border:1px solid #00ffcc18;color:#e5e7eb;font-size:22px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center; }
+    .pin-key:hover { background:#00ffcc18;border-color:#00ffcc66;color:#00ffcc; }
+    .pin-key:active { transform:scale(0.91); }
+    .voice-wave { display:flex;align-items:center;gap:3px;height:40px; }
+    .voice-bar { width:4px;border-radius:2px;background:#00ffcc;animation:wave .8s ease-in-out infinite; }
+    .voice-bar:nth-child(1){animation-delay:0s;height:8px;}.voice-bar:nth-child(2){animation-delay:.1s;height:20px;}.voice-bar:nth-child(3){animation-delay:.2s;height:32px;}.voice-bar:nth-child(4){animation-delay:.3s;height:24px;}.voice-bar:nth-child(5){animation-delay:.4s;height:16px;}.voice-bar:nth-child(6){animation-delay:.5s;height:28px;}.voice-bar:nth-child(7){animation-delay:.6s;height:12px;}
+    @keyframes wave { 0%,100%{transform:scaleY(.4);opacity:.5;}50%{transform:scaleY(1);opacity:1;} }
+    .badge-on { background:#00ffcc14;border:1px solid #00ffcc44;color:#00ffcc; }
+    .badge-off { background:#f59e0b14;border:1px solid #f59e0b44;color:#f59e0b; }
+    .input-field { width:100%;background:#0a1a1a;border:1px solid #00ffcc18;border-radius:12px;padding:11px 16px;color:#e5e7eb;font-size:14px;outline:none;transition:border .2s; }
+    .input-field:focus { border-color:#00ffcc66; }
+    .input-field::placeholder { color:#374151; }
+    .btn-primary { background:#00ffcc;color:#000;font-weight:700;border-radius:12px;padding:12px 0;width:100%;font-size:15px;cursor:pointer;transition:all .2s;letter-spacing:.5px; }
+    .btn-primary:hover { background:#fff;transform:translateY(-1px); }
+    .step-dot { width:8px;height:8px;border-radius:50%;background:#1f2937;transition:all .3s; }
+    .step-dot.active { background:#00ffcc;box-shadow:0 0 8px #00ffcc; }
     .step-dot.done { background:#00ffcc44; }
+    /* 攻击按钮美化 */
+    .attack-btn { width:100%;text-align:left;padding:14px 16px;border-radius:14px;background:rgba(10,20,20,0.9);border:1px solid rgba(255,255,255,0.07);transition:all .25s;cursor:pointer; }
+    .attack-btn:hover { border-color:#00ffcc44;background:rgba(0,255,204,0.05);transform:translateX(2px); }
+    .attack-btn .icon { width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0; }
+    /* 状态指示灯 */
+    .status-dot { width:8px;height:8px;border-radius:50%;display:inline-block; }
+    /* 聊天气泡 */
+    .chat-bubble-j { background:rgba(0,255,204,0.06);border:1px solid rgba(0,255,204,0.12);border-radius:0 16px 16px 16px;padding:14px 16px; }
+    .chat-bubble-u { background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.08);border-radius:16px 0 16px 16px;padding:14px 16px; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-<!-- ========== 初始化遮罩（最高层） ========== -->
+<!-- ========== 初始化遮罩 ========== -->
 <div id="init-overlay" class="overlay-layer">
-  <div class="glass rounded-2xl p-8 w-full max-w-md mx-4" style="border-color:rgba(0,255,204,0.3)">
-
-    <!-- 步骤指示器 -->
-    <div class="step-indicator" id="step-indicator">
+  <div class="glass rounded-3xl p-8 w-full max-w-md mx-4" style="border-color:rgba(0,255,204,0.2)">
+    <div class="flex justify-center gap-2 mb-7">
       <div class="step-dot active" id="sdot-0"></div>
       <div class="step-dot" id="sdot-1"></div>
       <div class="step-dot" id="sdot-2"></div>
     </div>
 
-    <!-- ===== STEP 0: 欢迎/登录/注册 ===== -->
+    <!-- STEP 0: 登录/注册 -->
     <div id="step-welcome">
-      <div class="flex items-center justify-center gap-2 mb-4">
-        <div class="w-2 h-2 rounded-full bg-[#00ffcc] blink"></div>
-        <span class="mono text-xs text-[#00ffcc]/60">J.A.R.V.I.S EDGE SYSTEM</span>
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 rounded-2xl bg-[#00ffcc]/10 border border-[#00ffcc]/30 flex items-center justify-center mx-auto mb-4">
+          <span class="text-2xl">🛡️</span>
+        </div>
+        <h2 class="text-2xl font-bold text-white mb-1">J.A.R.V.I.S</h2>
+        <p class="text-sm text-gray-500">边缘智能安全系统</p>
       </div>
-      <h2 class="text-2xl font-bold text-white mb-1 text-center">欢迎</h2>
-      <p class="text-xs text-gray-500 mono mb-6 text-center">请登录或注册以继续</p>
-
-      <!-- 登录表单 -->
       <div id="form-login">
         <div class="space-y-3 mb-4">
-          <input id="login-username" class="input-field mono" type="text" placeholder="用户名" autocomplete="off">
-          <input id="login-password" class="input-field mono" type="password" placeholder="密码">
+          <input id="login-username" class="input-field" type="text" placeholder="用户名" autocomplete="off">
+          <input id="login-password" class="input-field" type="password" placeholder="密码">
         </div>
-        <div id="login-error" class="text-red-400 text-xs mono mb-3 h-4 text-center"></div>
-        <button class="btn-primary mb-3" onclick="doLogin()">登 录</button>
-        <p class="text-center text-xs text-gray-500 mono">还没有账号？<button onclick="showRegister()" class="text-[#00ffcc] hover:underline">立即注册</button></p>
+        <div id="login-error" class="text-red-400 text-xs mb-3 h-4 text-center"></div>
+        <button class="btn-primary mb-4" onclick="doLogin()">登 录</button>
+        <p class="text-center text-sm text-gray-500">还没有账号？<button onclick="showRegister()" class="text-[#00ffcc] hover:underline ml-1">立即注册</button></p>
       </div>
-
-      <!-- 注册表单 -->
       <div id="form-register" class="hidden">
         <div class="space-y-3 mb-4">
-          <input id="reg-username" class="input-field mono" type="text" placeholder="设定用户名（2-16位）" autocomplete="off">
-          <input id="reg-password" class="input-field mono" type="password" placeholder="设定密码（至少4位）">
-          <input id="reg-password2" class="input-field mono" type="password" placeholder="确认密码">
+          <input id="reg-username" class="input-field" type="text" placeholder="设定用户名（2-16位）" autocomplete="off">
+          <input id="reg-password" class="input-field" type="password" placeholder="设定密码（至少4位）">
+          <input id="reg-password2" class="input-field" type="password" placeholder="确认密码">
         </div>
-        <div id="reg-error" class="text-red-400 text-xs mono mb-3 h-4 text-center"></div>
-        <button class="btn-primary mb-3" onclick="doRegister()">注 册</button>
-        <p class="text-center text-xs text-gray-500 mono">已有账号？<button onclick="showLogin()" class="text-[#00ffcc] hover:underline">返回登录</button></p>
+        <div id="reg-error" class="text-red-400 text-xs mb-3 h-4 text-center"></div>
+        <button class="btn-primary mb-4" onclick="doRegister()">创建账号</button>
+        <p class="text-center text-sm text-gray-500">已有账号？<button onclick="showLogin()" class="text-[#00ffcc] hover:underline ml-1">返回登录</button></p>
       </div>
     </div>
 
-    <!-- ===== STEP 1: 设定/验证 PIN ===== -->
+    <!-- STEP 1: PIN -->
     <div id="step-pin-wrap" class="hidden text-center">
-      <div class="flex items-center justify-center gap-2 mb-2">
-        <div class="w-2 h-2 rounded-full bg-[#00ffcc] blink"></div>
-        <span class="mono text-xs text-[#00ffcc]/60" id="pin-node-label">NODE-XXXXXXXX</span>
+      <div class="w-14 h-14 rounded-2xl bg-[#00ffcc]/10 border border-[#00ffcc]/30 flex items-center justify-center mx-auto mb-4">
+        <span class="text-2xl">🔐</span>
       </div>
-      <h2 class="text-xl font-bold text-white mb-1" id="pin-title">设定近点授权密码</h2>
-      <p class="text-xs text-gray-500 mono mb-5" id="pin-subtitle">请设定您的专属 4 位 PIN 码</p>
-      <div class="flex justify-center gap-3 mb-2" id="pin-dots-main">
+      <h2 class="text-xl font-bold text-white mb-1" id="pin-title">设定安全 PIN 码</h2>
+      <p class="text-sm text-gray-500 mb-6" id="pin-subtitle">用于高权限操作的二次验证</p>
+      <div class="flex justify-center gap-4 mb-3" id="pin-dots-main">
         <div class="pin-dot"></div><div class="pin-dot"></div>
         <div class="pin-dot"></div><div class="pin-dot"></div>
       </div>
-      <div id="pin-hint-main" class="text-[#00ffcc]/60 text-xs mono mb-3 h-4">输入 PIN 码</div>
+      <div id="pin-hint-main" class="text-[#00ffcc]/60 text-xs mb-4 h-4">请输入 4 位 PIN 码</div>
       <div class="grid grid-cols-3 gap-3 max-w-xs mx-auto">
-        <button class="pin-key" onclick="mainPinInput('1')">1</button>
-        <button class="pin-key" onclick="mainPinInput('2')">2</button>
-        <button class="pin-key" onclick="mainPinInput('3')">3</button>
-        <button class="pin-key" onclick="mainPinInput('4')">4</button>
-        <button class="pin-key" onclick="mainPinInput('5')">5</button>
-        <button class="pin-key" onclick="mainPinInput('6')">6</button>
-        <button class="pin-key" onclick="mainPinInput('7')">7</button>
-        <button class="pin-key" onclick="mainPinInput('8')">8</button>
-        <button class="pin-key" onclick="mainPinInput('9')">9</button>
-        <button class="pin-key text-gray-500 text-sm" onclick="mainPinClear()">CLR</button>
-        <button class="pin-key" onclick="mainPinInput('0')">0</button>
-        <button class="pin-key text-gray-500 text-sm" onclick="mainPinDel()">⌫</button>
+        <button class="pin-key" onclick="mainPinInput('1')">1</button><button class="pin-key" onclick="mainPinInput('2')">2</button><button class="pin-key" onclick="mainPinInput('3')">3</button>
+        <button class="pin-key" onclick="mainPinInput('4')">4</button><button class="pin-key" onclick="mainPinInput('5')">5</button><button class="pin-key" onclick="mainPinInput('6')">6</button>
+        <button class="pin-key" onclick="mainPinInput('7')">7</button><button class="pin-key" onclick="mainPinInput('8')">8</button><button class="pin-key" onclick="mainPinInput('9')">9</button>
+        <button class="pin-key text-gray-500 text-sm" onclick="mainPinClear()">清除</button><button class="pin-key" onclick="mainPinInput('0')">0</button><button class="pin-key text-gray-500 text-xl" onclick="mainPinDel()">⌫</button>
       </div>
     </div>
 
-    <!-- ===== STEP 2: 声纹录入 ===== -->
+    <!-- STEP 2: 声纹 -->
     <div id="step-voice" class="hidden text-center">
-      <div class="flex items-center justify-center gap-2 mb-2">
-        <div class="w-2 h-2 rounded-full bg-[#00ffcc] blink"></div>
-        <span class="mono text-xs text-[#00ffcc]/60">PIN 验证通过 ✓</span>
+      <div class="w-14 h-14 rounded-2xl bg-[#00ffcc]/10 border border-[#00ffcc]/30 flex items-center justify-center mx-auto mb-4">
+        <span class="text-2xl">🎙️</span>
       </div>
-      <h2 class="text-xl font-bold text-white mb-1">声纹录入</h2>
-      <p class="text-xs text-gray-500 mono mb-4">请朗读以下文本，完成主理人绑定</p>
-      <div class="bg-black/40 border border-[#00ffcc]/20 rounded-xl p-4 mb-5 text-left">
-        <p id="voice-enroll-text" class="text-[#00ffcc] text-sm leading-relaxed mono">"J.A.R.V.I.S 边缘节点，主理人身份绑定，授权码 Zero-One。"</p>
+      <h2 class="text-xl font-bold text-white mb-1">声纹身份绑定</h2>
+      <p class="text-sm text-gray-500 mb-5">朗读下方文字，系统将记录您的声纹特征</p>
+      <div class="bg-black/40 border border-[#00ffcc]/15 rounded-2xl p-4 mb-5 text-left">
+        <p id="voice-enroll-text" class="text-[#00ffcc] text-sm leading-relaxed">"J.A.R.V.I.S 边缘节点，主理人身份绑定，授权码 Zero-One。"</p>
       </div>
       <div id="voice-enroll-status" class="flex flex-col items-center gap-3 mb-4">
-        <button id="btn-enroll-start" onclick="startEnrollment()" class="px-8 py-3 bg-[#00ffcc] text-black font-bold rounded-xl hover:bg-white transition-all mono text-sm">
-          🎙️ 开始录入声纹
-        </button>
+        <button id="btn-enroll-start" onclick="startEnrollment()" class="btn-primary" style="max-width:220px">🎙️ 开始录入声纹</button>
       </div>
-      <div id="enroll-log" class="text-xs mono text-left space-y-1 min-h-12"></div>
+      <div id="enroll-log" class="text-xs text-left space-y-1.5 min-h-10"></div>
     </div>
-
   </div>
 </div>
 
-<!-- ========== 重置验证弹窗（最高层，挂body顶层） ========== -->
+<!-- ========== 重置 PIN 弹窗 ========== -->
 <div id="reset-modal" class="modal-layer hidden">
-  <div class="glass rounded-2xl p-8 w-full max-w-sm mx-4 text-center" style="border-color:rgba(0,255,204,0.3)">
-    <h2 class="text-lg font-bold text-white mb-1">近点授权验证</h2>
-    <p class="text-xs text-gray-500 mono mb-5">重置系统需要输入管理 PIN 码</p>
-    <div class="flex justify-center gap-3 mb-2" id="reset-pin-dots">
-      <div class="pin-dot"></div><div class="pin-dot"></div>
-      <div class="pin-dot"></div><div class="pin-dot"></div>
+  <div class="glass rounded-3xl p-8 w-full max-w-sm mx-4 text-center" style="border-color:rgba(0,255,204,0.2)">
+    <div class="w-12 h-12 rounded-xl bg-[#00ffcc]/10 border border-[#00ffcc]/30 flex items-center justify-center mx-auto mb-4">
+      <span class="text-xl">🔑</span>
     </div>
-    <div id="reset-pin-error" class="text-red-400 text-xs mono mb-3 h-4"></div>
-    <div class="grid grid-cols-3 gap-2 max-w-xs mx-auto mb-4">
-      <button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('1')">1</button>
-      <button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('2')">2</button>
-      <button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('3')">3</button>
-      <button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('4')">4</button>
-      <button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('5')">5</button>
-      <button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('6')">6</button>
-      <button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('7')">7</button>
-      <button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('8')">8</button>
-      <button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('9')">9</button>
-      <button class="pin-key text-gray-500 text-sm" style="width:56px;height:56px" onclick="resetPinClear()">CLR</button>
-      <button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('0')">0</button>
-      <button class="pin-key text-gray-500 text-sm" style="width:56px;height:56px" onclick="resetPinDel()">⌫</button>
+    <h2 class="text-lg font-bold text-white mb-1">身份验证</h2>
+    <p class="text-sm text-gray-500 mb-5">请输入您的安全 PIN 码以继续</p>
+    <div class="flex justify-center gap-4 mb-3" id="reset-pin-dots">
+      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
     </div>
-    <button onclick="closeResetModal()" class="text-xs text-gray-600 mono hover:text-gray-400">取消</button>
+    <div id="reset-pin-error" class="text-red-400 text-xs mb-3 h-4"></div>
+    <div class="grid grid-cols-3 gap-2 max-w-xs mx-auto mb-5">
+      <button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('1')">1</button><button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('2')">2</button><button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('3')">3</button>
+      <button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('4')">4</button><button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('5')">5</button><button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('6')">6</button>
+      <button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('7')">7</button><button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('8')">8</button><button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('9')">9</button>
+      <button class="pin-key text-gray-500 text-sm" style="width:56px;height:56px" onclick="resetPinClear()">清除</button><button class="pin-key" style="width:56px;height:56px" onclick="resetPinInput('0')">0</button><button class="pin-key text-gray-500 text-xl" style="width:56px;height:56px" onclick="resetPinDel()">⌫</button>
+    </div>
+    <button onclick="closeResetModal()" class="text-sm text-gray-600 hover:text-gray-400 transition-colors">取消</button>
   </div>
 </div>
 
 <!-- ========== 主界面 ========== -->
-<header class="h-14 border-b border-gray-800 bg-black/80 backdrop-blur flex items-center justify-between px-6 sticky top-0 z-40">
+<header class="h-16 border-b border-white/5 bg-black/60 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-40">
   <div class="flex items-center gap-3">
-    <div class="w-2 h-2 rounded-full bg-[#00ffcc] blink"></div>
-    <span class="mono font-bold text-lg text-white">J.A.R.V.I.S <span class="neon">Edge System</span></span>
-    <span class="text-xs text-[#00ffcc]/60 border border-[#00ffcc]/30 bg-[#00ffcc]/10 px-2 py-0.5 rounded mono ml-2">Edge Node Active</span>
+    <div class="w-8 h-8 rounded-lg bg-[#00ffcc]/15 border border-[#00ffcc]/30 flex items-center justify-center">
+      <span class="text-sm">🛡️</span>
+    </div>
+    <div>
+      <span class="font-bold text-white text-base">J.A.R.V.I.S</span>
+      <span class="text-gray-500 text-sm ml-2">边缘安全系统</span>
+    </div>
   </div>
   <nav class="flex">
-    <button class="tab-btn active mono" onclick="switchTab('monitor',this)">全景监控台</button>
-    <button class="tab-btn mono" onclick="switchTab('hunting',this)">威胁狩猎</button>
-    <button class="tab-btn mono" onclick="switchTab('topology',this)">物理拓扑</button>
-    <button class="tab-btn mono" onclick="switchTab('audit',this)">安全审计日志</button>
+    <button class="tab-btn active" onclick="switchTab('monitor',this)">监控台</button>
+    <button class="tab-btn" onclick="switchTab('hunting',this)">威胁中心</button>
+    <button class="tab-btn" onclick="switchTab('topology',this)">网络拓扑</button>
+    <button class="tab-btn" onclick="switchTab('audit',this)">操作日志</button>
   </nav>
-  <div class="mono text-xs text-gray-500 flex items-center gap-3">
-    <span id="master-badge" class="px-2 py-0.5 rounded text-xs mono badge-pending">⏳ 未初始化</span>
-    <span id="clock" class="text-white">00:00:00</span>
-    <span id="sys-status" class="text-green-400">● SYSTEM ONLINE</span>
+  <div class="flex items-center gap-3 text-sm">
+    <span id="master-badge" class="px-3 py-1 rounded-full text-xs badge-off">⏳ 未登录</span>
+    <span id="clock" class="text-gray-400 mono text-xs">00:00:00</span>
+    <span id="sys-status" class="flex items-center gap-1.5 text-green-400 text-xs"><span class="status-dot bg-green-400 blink"></span>运行正常</span>
   </div>
 </header>
 
-<!-- TAB 1 -->
-<div id="tab-monitor" class="tab-content active p-4" style="min-height:calc(100vh - 56px)">
-  <div class="grid grid-cols-12 gap-4">
+<!-- ========== TAB 1: 监控台 ========== -->
+<div id="tab-monitor" class="tab-content active p-5" style="min-height:calc(100vh - 64px)">
+  <div class="grid grid-cols-12 gap-5">
+
+    <!-- 左栏 -->
     <div class="col-span-3 flex flex-col gap-4">
-      <div class="glass p-4 rounded-xl">
-        <h2 class="text-sm font-bold neon mb-1">⚡ 评委快速演示</h2>
-        <p class="text-xs text-gray-500 mb-3">点击预设攻击向量，体验物理气隙熔断全流程。</p>
+      <!-- 攻击演示 -->
+      <div class="card p-5">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-base">⚡</span>
+          <h2 class="text-sm font-semibold text-white">攻击场景演示</h2>
+        </div>
+        <p class="text-xs text-gray-500 mb-4 leading-relaxed">点击模拟真实攻击场景，体验系统自动防御与物理隔离的完整流程</p>
         <div class="space-y-2">
-          <button onclick="simulateAttack('cpu')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all">
-            <div class="text-sm font-bold text-white">🔥 向量1：算力满载攻击</div>
-            <div class="text-xs text-gray-500 mt-0.5">恶意挖矿榨干CPU触发热力学熔断</div>
+          <button onclick="simulateAttack('cpu')" class="attack-btn">
+            <div class="flex items-center gap-3">
+              <div class="icon bg-orange-500/15 text-orange-400">🔥</div>
+              <div>
+                <div class="text-sm font-medium text-white">算力满载攻击</div>
+                <div class="text-xs text-gray-500 mt-0.5">恶意挖矿 → 热力学熔断</div>
+              </div>
+            </div>
           </button>
-          <button onclick="simulateAttack('ssh')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all">
-            <div class="text-sm font-bold text-white">🔓 向量2：SSH暴力破解</div>
-            <div class="text-xs text-gray-500 mt-0.5">高频非法登录触发身份审计熔断</div>
+          <button onclick="simulateAttack('ssh')" class="attack-btn">
+            <div class="flex items-center gap-3">
+              <div class="icon bg-red-500/15 text-red-400">🔓</div>
+              <div>
+                <div class="text-sm font-medium text-white">SSH 暴力破解</div>
+                <div class="text-xs text-gray-500 mt-0.5">高频非法登录 → 身份熔断</div>
+              </div>
+            </div>
           </button>
-          <button onclick="simulateAttack('udp')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all">
-            <div class="text-sm font-bold text-white">🌊 向量3：网络流量激增</div>
-            <div class="text-xs text-gray-500 mt-0.5">UDP Flood 触发流量嗅探阈值</div>
+          <button onclick="simulateAttack('udp')" class="attack-btn">
+            <div class="flex items-center gap-3">
+              <div class="icon bg-blue-500/15 text-blue-400">🌊</div>
+              <div>
+                <div class="text-sm font-medium text-white">网络流量激增</div>
+                <div class="text-xs text-gray-500 mt-0.5">UDP Flood → 流量嗅探熔断</div>
+              </div>
+            </div>
           </button>
-          <button onclick="simulateAttack('net')" class="w-full text-left p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-[#00ffcc] transition-all">
-            <div class="text-sm font-bold text-white">✂️ 向量4：用户指令断网</div>
-            <div class="text-xs text-gray-500 mt-0.5">语音/文字指令触发极速路由响应</div>
-          </button>
-          <button onclick="openResetModal()" class="w-full p-3 rounded-lg bg-gray-900 border border-gray-700 hover:border-green-500 transition-all">
-            <div class="text-sm font-bold text-green-400 text-center">🔄 重置系统状态</div>
+          <button onclick="simulateAttack('net')" class="attack-btn">
+            <div class="flex items-center gap-3">
+              <div class="icon bg-purple-500/15 text-purple-400">✂️</div>
+              <div>
+                <div class="text-sm font-medium text-white">指令断网</div>
+                <div class="text-xs text-gray-500 mt-0.5">语音 / 文字指令 → 极速响应</div>
+              </div>
+            </div>
           </button>
         </div>
+        <button onclick="openResetModal()" class="w-full mt-3 py-2.5 rounded-xl border border-green-500/30 bg-green-500/5 text-green-400 text-sm font-medium hover:bg-green-500/10 transition-all">
+          🔄 恢复系统状态
+        </button>
       </div>
-      <div class="glass p-4 rounded-xl">
-        <h2 class="mono text-xs text-gray-400 mb-4 pb-2 border-b border-gray-800">/// 边缘节点遥测</h2>
+
+      <!-- 设备状态 -->
+      <div class="card p-5">
+        <h2 class="text-sm font-semibold text-white mb-4">设备实时状态</h2>
         <div class="space-y-4">
           <div>
-            <div class="flex justify-between text-xs mono mb-1"><span class="text-gray-400">CPU</span><span id="cpu-text" class="neon">12.4%</span></div>
-            <div class="w-full bg-gray-900 h-1.5 rounded overflow-hidden"><div id="cpu-bar" class="bar-fill bg-[#00ffcc]" style="width:12.4%"></div></div>
+            <div class="flex justify-between text-xs mb-1.5"><span class="text-gray-400">处理器负载</span><span id="cpu-text" class="neon font-medium">12.4%</span></div>
+            <div class="w-full bg-white/5 h-2 rounded-full overflow-hidden"><div id="cpu-bar" class="bar-fill bg-[#00ffcc]" style="width:12.4%"></div></div>
           </div>
           <div>
-            <div class="flex justify-between text-xs mono mb-1"><span class="text-gray-400">核心温度</span><span id="temp-text" class="neon">45.2°C</span></div>
-            <div class="w-full bg-gray-900 h-1.5 rounded overflow-hidden"><div id="temp-bar" class="bar-fill bg-[#00ffcc]" style="width:45%"></div></div>
+            <div class="flex justify-between text-xs mb-1.5"><span class="text-gray-400">核心温度</span><span id="temp-text" class="neon font-medium">45.2°C</span></div>
+            <div class="w-full bg-white/5 h-2 rounded-full overflow-hidden"><div id="temp-bar" class="bar-fill bg-[#00ffcc]" style="width:45%"></div></div>
           </div>
           <div>
-            <div class="flex justify-between text-xs mono mb-1"><span class="text-gray-400">出站流量</span><span id="net-text" class="neon">0.02MB/s</span></div>
-            <div class="w-full bg-gray-900 h-1.5 rounded overflow-hidden"><div id="net-bar" class="bar-fill bg-[#00ffcc]" style="width:5%"></div></div>
+            <div class="flex justify-between text-xs mb-1.5"><span class="text-gray-400">出站流量</span><span id="net-text" class="neon font-medium">0.02 MB/s</span></div>
+            <div class="w-full bg-white/5 h-2 rounded-full overflow-hidden"><div id="net-bar" class="bar-fill bg-[#00ffcc]" style="width:5%"></div></div>
           </div>
         </div>
-        <div class="mt-4 pt-3 border-t border-gray-800">
-          <h2 class="mono text-xs text-gray-400 mb-2">/// 物理气隙状态</h2>
-          <div id="relay-box" class="border border-[#00ffcc] p-3 text-center rounded-lg bg-[#00ffcc]/10 transition-all duration-500">
-            <div class="text-xs text-gray-400 mono mb-1">广域网物理继电器</div>
-            <div id="relay-text" class="text-xl font-bold neon mono tracking-widest">ONLINE</div>
+        <!-- 继电器状态 -->
+        <div class="mt-5 pt-4 border-t border-white/5">
+          <div class="text-xs text-gray-500 mb-2">广域网物理继电器</div>
+          <div id="relay-box" class="border border-[#00ffcc]/40 p-3 text-center rounded-xl bg-[#00ffcc]/5 transition-all duration-500">
+            <div id="relay-text" class="text-lg font-bold neon mono tracking-wider">● 已连接</div>
           </div>
         </div>
-        <div class="mt-3 pt-3 border-t border-gray-800/50">
-          <div class="text-xs text-gray-600 mb-2 mono">⚙ 路演环境 (Demo Only)</div>
-          <div class="flex gap-2">
-            <button onclick="setVoiceRole('owner')" id="role-owner" class="flex-1 py-1.5 text-xs rounded mono bg-[#00ffcc]/20 text-[#00ffcc] border border-[#00ffcc]/40">👤 主理人</button>
-            <button onclick="setVoiceRole('stranger')" id="role-stranger" class="flex-1 py-1.5 text-xs rounded mono bg-gray-800 text-gray-500 border border-gray-700">👤 录音/陌生人</button>
+        <!-- 演示模式角色切换（折叠，低调） -->
+        <details class="mt-4">
+          <summary class="text-xs text-gray-600 cursor-pointer hover:text-gray-400 select-none">演示模式设置</summary>
+          <div class="flex gap-2 mt-2">
+            <button onclick="setVoiceRole('owner')" id="role-owner" class="flex-1 py-1.5 text-xs rounded-lg bg-[#00ffcc]/15 text-[#00ffcc] border border-[#00ffcc]/30">👤 主理人</button>
+            <button onclick="setVoiceRole('stranger')" id="role-stranger" class="flex-1 py-1.5 text-xs rounded-lg bg-white/5 text-gray-500 border border-white/10">👤 陌生人</button>
           </div>
-        </div>
+        </details>
       </div>
     </div>
 
+    <!-- 中栏：对话 -->
     <div class="col-span-6 flex flex-col">
-      <div class="glass rounded-xl flex flex-col overflow-hidden" style="height:calc(100vh - 90px)">
-        <div class="bg-gray-900/80 px-4 py-3 border-b border-gray-800 flex justify-between items-center shrink-0">
-          <span class="text-sm font-bold text-white mono">J.A.R.V.I.S 混合路由中枢</span>
+      <div class="card flex flex-col overflow-hidden" style="height:calc(100vh - 96px)">
+        <div class="px-5 py-4 border-b border-white/5 flex justify-between items-center shrink-0">
+          <div>
+            <div class="text-sm font-semibold text-white">智能安全助手</div>
+            <div class="text-xs text-gray-500 mt-0.5">由 Qwen2.5 驱动 · 双路径异构推理</div>
+          </div>
           <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-green-400 blink"></span>
-            <span class="text-xs px-2 py-1 bg-green-900/30 text-green-400 border border-green-800 rounded mono">Qwen2.5 Active</span>
+            <span class="status-dot bg-green-400 blink"></span>
+            <span class="text-xs text-green-400">在线</span>
           </div>
         </div>
-        <div id="chat-output" class="flex-1 overflow-y-auto p-5 space-y-5 bg-black/30">
+        <div id="chat-output" class="flex-1 overflow-y-auto p-5 space-y-4 bg-black/20">
           <div class="flex gap-3">
-            <div class="w-8 h-8 rounded bg-[#00ffcc]/20 border border-[#00ffcc] flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div>
+            <div class="w-9 h-9 rounded-xl bg-[#00ffcc]/15 border border-[#00ffcc]/30 flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div>
             <div class="flex-1">
-              <div class="text-xs text-gray-500 mb-1 mono">SYSTEM_INIT | 00:00:00</div>
-              <div class="text-sm text-gray-300 leading-relaxed">欢迎使用 J.A.R.V.I.S 边缘可信中控系统。<br><br>推理引擎：<strong class="text-white">Qwen2.5</strong> · 双路径异构拓扑 + 硬件级物理气隙。<br><br>点击左侧触发攻击演示，或直接向我提问。</div>
+              <div class="text-xs text-gray-500 mb-2">J.A.R.V.I.S · 刚刚</div>
+              <div class="chat-bubble-j text-sm text-gray-200 leading-relaxed">
+                您好，欢迎使用 J.A.R.V.I.S 边缘安全系统。<br><br>
+                我可以帮您：<br>
+                • 🔍 分析和处置安全威胁<br>
+                • ⚡ 执行断网、开灯等快捷指令<br>
+                • 🧠 解答安全相关问题<br><br>
+                点击左侧场景按钮体验完整防御流程，或直接向我提问。
+              </div>
             </div>
           </div>
         </div>
-        <div class="bg-gray-900/80 border-t border-gray-800 shrink-0">
-          <div class="px-4 pt-2 pb-1 text-xs mono flex justify-between border-b border-gray-800/50 bg-black/20 flex-wrap gap-2">
-            <div class="flex gap-4">
-              <span class="text-gray-400"><span class="text-blue-400 font-bold">⚡极速:</span> 断网 / 恢复网络 / 开灯 / 关灯</span>
-              <span class="text-gray-400"><span class="text-purple-400 font-bold">🧠AI:</span> 如何处理？/ 溯源分析</span>
-            </div>
+        <div class="border-t border-white/5 shrink-0 p-4">
+          <div class="text-xs text-gray-600 mb-2 flex gap-4 flex-wrap">
+            <span>快捷指令：</span>
+            <button onclick="quickCmd('断网')" class="text-blue-400 hover:text-blue-300">断网</button>
+            <button onclick="quickCmd('恢复网络')" class="text-blue-400 hover:text-blue-300">恢复网络</button>
+            <button onclick="quickCmd('开灯')" class="text-blue-400 hover:text-blue-300">开灯</button>
+            <button onclick="quickCmd('关灯')" class="text-blue-400 hover:text-blue-300">关灯</button>
+            <button onclick="quickCmd('如何处理这次攻击？')" class="text-purple-400 hover:text-purple-300">如何处理？</button>
           </div>
-          <div class="p-3">
-            <div class="flex gap-2 items-center bg-black border border-gray-700 p-1.5 rounded-lg focus-within:border-[#00ffcc] transition-colors">
-              <span class="neon mono font-bold pl-2 text-sm">❯</span>
-              <input type="text" id="cmd-input" class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2 placeholder-gray-600 mono" placeholder="输入指令或点击麦克风语音输入..." autocomplete="off">
-              <button id="btn-mic" class="mic-btn p-2 text-gray-400 hover:text-[#00ffcc] rounded-full hover:bg-gray-800" title="语音输入">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-              </button>
-              <button id="btn-send" class="px-4 py-1.5 bg-[#00ffcc] text-black font-bold rounded hover:bg-white transition-colors text-sm mono">执行 (Enter)</button>
-            </div>
+          <div class="flex gap-2 items-center bg-white/5 border border-white/8 p-2 rounded-xl focus-within:border-[#00ffcc]/40 transition-colors">
+            <input type="text" id="cmd-input" class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2 placeholder-gray-600" placeholder="输入指令或问题..." autocomplete="off">
+            <button id="btn-mic" class="mic-btn p-2 text-gray-500 hover:text-[#00ffcc] rounded-lg hover:bg-white/5 transition-colors" title="语音输入">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+            </button>
+            <button id="btn-send" class="px-4 py-2 bg-[#00ffcc] text-black font-bold rounded-lg hover:bg-white transition-colors text-sm">发送</button>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- 右栏：系统日志 -->
     <div class="col-span-3 flex flex-col gap-4">
-      <div class="glass p-0 rounded-xl flex flex-col overflow-hidden" style="height:calc(100vh - 90px)">
-        <div class="bg-gray-900/80 px-4 py-2 border-b border-gray-800 flex justify-between items-center shrink-0">
-          <span class="mono text-xs text-gray-400">/var/log/syslog</span>
-          <span class="text-xs text-green-400 mono blink">● LIVE</span>
+      <div class="card flex flex-col overflow-hidden" style="height:calc(100vh - 96px)">
+        <div class="px-4 py-3 border-b border-white/5 flex justify-between items-center shrink-0">
+          <div>
+            <div class="text-sm font-medium text-white">系统运行日志</div>
+            <div class="text-xs text-gray-500 mt-0.5">实时事件流</div>
+          </div>
+          <span class="flex items-center gap-1.5 text-xs text-green-400"><span class="status-dot bg-green-400 blink"></span>实时</span>
         </div>
-        <div id="terminal-logs" class="flex-1 overflow-y-auto p-3 space-y-0.5 mono bg-black/50 text-xs">
-          <div class="log-row text-gray-400">[SYSTEM] 边缘节点启动成功...</div>
-          <div class="log-row text-gray-400">[SYSTEM] 嗅探器线程就绪</div>
-          <div class="log-row text-[#00ffcc]">[SNIFFER] 基线自适应校准完成</div>
-          <div class="log-row text-gray-400">[JARVIS] Qwen2.5 模型通道就绪</div>
-          <div class="log-row text-[#00ffcc]">[API] 云端推理通道就绪</div>
+        <div id="terminal-logs" class="flex-1 overflow-y-auto p-4 space-y-0.5 bg-black/30 text-xs">
+          <div class="log-row text-gray-500">系统启动完成</div>
+          <div class="log-row text-gray-500">安全嗅探器就绪</div>
+          <div class="log-row text-[#00ffcc]">基线校准完成</div>
+          <div class="log-row text-gray-500">Qwen2.5 推理引擎就绪</div>
+          <div class="log-row text-[#00ffcc]">云端推理通道已连接</div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- TAB 2 -->
+<!-- ========== TAB 2: 威胁中心 ========== -->
 <div id="tab-hunting" class="tab-content p-6">
-  <h1 class="text-2xl font-bold text-white mb-6">威胁狩猎中心 <span class="neon">Threat Hunting</span></h1>
-  <div class="grid grid-cols-4 gap-4 mb-6">
-    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">今日拦截事件</div><div class="text-3xl font-bold neon mono" id="stat-intercepts">47</div></div>
-    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">物理熔断次数</div><div class="text-3xl font-bold text-orange-400 mono" id="stat-lockdowns">3</div></div>
-    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">平均响应时延</div><div class="text-3xl font-bold text-blue-400 mono">&lt;5ms</div></div>
-    <div class="glass p-4 rounded-xl"><div class="text-xs text-gray-400 mono mb-1">系统安全评分</div><div class="text-3xl font-bold neon mono">98/100</div></div>
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-white">威胁监控中心</h1>
+    <p class="text-sm text-gray-500 mt-1">实时追踪、分析并响应所有安全威胁事件</p>
   </div>
-  <div class="grid grid-cols-3 gap-6">
-    <div class="col-span-2 glass rounded-xl overflow-hidden">
-      <div class="bg-gray-900/80 px-4 py-3 border-b border-gray-800"><span class="text-sm font-bold text-white">近期威胁事件</span></div>
-      <table class="w-full text-xs mono text-left">
-        <thead><tr class="text-gray-500 bg-gray-900/50"><th class="p-3">时间戳</th><th class="p-3">威胁类型</th><th class="p-3">来源</th><th class="p-3">严重程度</th><th class="p-3">状态</th></tr></thead>
+  <div class="grid grid-cols-4 gap-4 mb-6">
+    <div class="card p-5"><div class="text-xs text-gray-500 mb-2">今日拦截事件</div><div class="text-3xl font-bold neon" id="stat-intercepts">47</div></div>
+    <div class="card p-5"><div class="text-xs text-gray-500 mb-2">物理熔断次数</div><div class="text-3xl font-bold text-orange-400" id="stat-lockdowns">3</div></div>
+    <div class="card p-5"><div class="text-xs text-gray-500 mb-2">平均响应时延</div><div class="text-3xl font-bold text-blue-400">&lt;5ms</div></div>
+    <div class="card p-5"><div class="text-xs text-gray-500 mb-2">安全评分</div><div class="text-3xl font-bold neon">98/100</div></div>
+  </div>
+  <div class="grid grid-cols-3 gap-5">
+    <div class="col-span-2 card overflow-hidden">
+      <div class="px-5 py-4 border-b border-white/5"><span class="text-sm font-semibold text-white">近期威胁事件</span></div>
+      <table class="w-full text-sm text-left">
+        <thead><tr class="text-xs text-gray-500 bg-black/20"><th class="p-4">时间</th><th class="p-4">威胁类型</th><th class="p-4">来源</th><th class="p-4">等级</th><th class="p-4">处置结果</th></tr></thead>
         <tbody id="threat-tbody">
-          <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33</td><td class="p-3 text-white">SSH 暴力破解</td><td class="p-3 text-gray-400">192.168.1.105</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-green-400">✓ 物理熔断</td></tr>
-          <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:18:07</td><td class="p-3 text-white">算力异常满载</td><td class="p-3 text-gray-400">PID:4821</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-green-400">✓ 物理熔断</td></tr>
-          <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">00:55:41</td><td class="p-3 text-white">异常出站流量</td><td class="p-3 text-gray-400">wlan0→外网</td><td class="p-3 text-orange-400 font-bold">HIGH</td><td class="p-3 text-green-400">✓ 流量截断</td></tr>
+          <tr class="border-b border-white/4"><td class="p-4 text-gray-400 mono text-xs">01:24:33</td><td class="p-4 text-white">SSH 暴力破解</td><td class="p-4 text-gray-400 text-xs">192.168.1.105</td><td class="p-4"><span class="px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-xs">严重</span></td><td class="p-4 text-green-400 text-xs">✓ 物理隔离</td></tr>
+          <tr class="border-b border-white/4"><td class="p-4 text-gray-400 mono text-xs">01:18:07</td><td class="p-4 text-white">算力异常满载</td><td class="p-4 text-gray-400 text-xs">PID:4821</td><td class="p-4"><span class="px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-xs">严重</span></td><td class="p-4 text-green-400 text-xs">✓ 物理隔离</td></tr>
+          <tr class="border-b border-white/4"><td class="p-4 text-gray-400 mono text-xs">00:55:41</td><td class="p-4 text-white">异常出站流量</td><td class="p-4 text-gray-400 text-xs">wlan0→外网</td><td class="p-4"><span class="px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-400 text-xs">高危</span></td><td class="p-4 text-green-400 text-xs">✓ 流量截断</td></tr>
         </tbody>
       </table>
     </div>
-    <div class="glass p-4 rounded-xl">
-      <h3 class="text-sm font-bold text-white mb-3">🤖 AI 威胁研判</h3>
-      <div class="space-y-3 text-xs text-gray-300">
-        <div class="bg-red-900/20 border border-red-800/50 p-3 rounded-lg"><div class="text-red-400 font-bold mb-1">高危预警</div>SSH 暴力破解频率 1 小时内增长 340%，疑似针对性渗透。</div>
-        <div class="bg-yellow-900/20 border border-yellow-800/50 p-3 rounded-lg"><div class="text-yellow-400 font-bold mb-1">趋势分析</div>算力异常集中在 00:00-02:00，与挖矿木马活跃窗口吻合。</div>
+    <div class="card p-5">
+      <h3 class="text-sm font-semibold text-white mb-4">🤖 AI 威胁分析</h3>
+      <div class="space-y-3 text-sm">
+        <div class="bg-red-500/8 border border-red-500/20 p-4 rounded-xl"><div class="text-red-400 font-semibold mb-1.5 text-xs">⚠ 高危预警</div><div class="text-gray-300 text-xs leading-relaxed">SSH 暴力破解频率 1 小时内增长 340%，疑似针对性渗透攻击。</div></div>
+        <div class="bg-yellow-500/8 border border-yellow-500/20 p-4 rounded-xl"><div class="text-yellow-400 font-semibold mb-1.5 text-xs">📊 趋势分析</div><div class="text-gray-300 text-xs leading-relaxed">算力异常集中在 00:00-02:00，与挖矿木马活跃窗口高度吻合。</div></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- TAB 3 -->
+<!-- ========== TAB 3: 网络拓扑 ========== -->
 <div id="tab-topology" class="tab-content p-6">
-  <h1 class="text-2xl font-bold text-white mb-6">物理网络拓扑 <span class="neon">Physical Topology</span></h1>
-  <div class="grid grid-cols-3 gap-6">
-    <div class="col-span-2 glass rounded-xl p-6">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-white">物理网络拓扑</h1>
+    <p class="text-sm text-gray-500 mt-1">系统硬件架构与设备连接状态</p>
+  </div>
+  <div class="grid grid-cols-3 gap-5">
+    <div class="col-span-2 card p-6">
       <svg viewBox="0 0 700 420" class="w-full" style="max-height:360px">
         <line x1="350" y1="36" x2="350" y2="60" class="conn-line" id="wan-line"/>
         <line x1="350" y1="104" x2="350" y2="155" class="conn-line"/>
         <line x1="350" y1="205" x2="180" y2="275" class="conn-line"/>
         <line x1="350" y1="205" x2="350" y2="275" class="conn-line"/>
         <line x1="350" y1="205" x2="520" y2="275" class="conn-line"/>
-        <rect x="285" y="4" width="130" height="32" rx="6" fill="#0a1a1a" stroke="#00ffcc44" stroke-width="1.5"/>
-        <text x="350" y="24" text-anchor="middle" fill="#00ffcc" font-size="11" font-family="monospace">🌐 互联网 (WAN)</text>
-        <rect x="260" y="60" width="180" height="44" rx="8" fill="#0a1a0a" stroke="#00ffcc" stroke-width="2"/>
-        <text x="350" y="78" text-anchor="middle" fill="#00ffcc" font-size="10" font-family="monospace">⚡ 硬件级气隙继电器</text>
-        <rect x="250" y="155" width="200" height="50" rx="8" fill="#001a2a" stroke="#0088ff" stroke-width="2"/>
-        <text x="350" y="175" text-anchor="middle" fill="#4499ff" font-size="11" font-family="monospace">🧠 边缘计算核心</text>
-        <text x="350" y="193" text-anchor="middle" fill="#6699aa" font-size="9" font-family="monospace">Raspberry Pi 5 + Qwen2.5</text>
-        <rect x="100" y="275" width="160" height="44" rx="6" fill="#0a0a1a" stroke="#8855ff" stroke-width="1.5"/>
-        <text x="180" y="293" text-anchor="middle" fill="#aa77ff" font-size="10" font-family="monospace">🔊 离线声学模型</text>
-        <text x="180" y="309" text-anchor="middle" fill="#665588" font-size="9" font-family="monospace">Resemblyzer / Vosk</text>
-        <rect x="265" y="275" width="170" height="44" rx="6" fill="#0a1a0a" stroke="#00aa55" stroke-width="1.5"/>
-        <text x="350" y="293" text-anchor="middle" fill="#00cc66" font-size="10" font-family="monospace">🔐 安全嗅探引擎</text>
-        <text x="350" y="309" text-anchor="middle" fill="#006633" font-size="9" font-family="monospace">CPU/Temp/Net/SSH</text>
-        <rect x="440" y="275" width="160" height="44" rx="6" fill="#1a0a0a" stroke="#ff6600" stroke-width="1.5"/>
-        <text x="520" y="293" text-anchor="middle" fill="#ff8833" font-size="10" font-family="monospace">💡 局域网控制总线</text>
-        <text x="520" y="309" text-anchor="middle" fill="#884422" font-size="9" font-family="monospace">Zigbee CC2652P</text>
+        <rect x="285" y="4" width="130" height="32" rx="8" fill="#0a1a1a" stroke="#00ffcc33" stroke-width="1.5"/>
+        <text x="350" y="24" text-anchor="middle" fill="#9ca3af" font-size="11" font-family="sans-serif">🌐 互联网</text>
+        <rect x="255" y="60" width="190" height="44" rx="10" fill="#0a1a0a" stroke="#00ffcc" stroke-width="2"/>
+        <text x="350" y="80" text-anchor="middle" fill="#00ffcc" font-size="11" font-family="sans-serif" font-weight="bold">⚡ 物理气隙继电器</text>
+        <text x="350" y="96" text-anchor="middle" fill="#6b7280" font-size="9" font-family="sans-serif">硬件级断路 · 响应 &lt;5ms</text>
+        <rect x="245" y="155" width="210" height="50" rx="10" fill="#001a2a" stroke="#0088ff" stroke-width="2"/>
+        <text x="350" y="175" text-anchor="middle" fill="#60a5fa" font-size="11" font-family="sans-serif" font-weight="bold">🧠 边缘计算核心</text>
+        <text x="350" y="193" text-anchor="middle" fill="#6b7280" font-size="9" font-family="sans-serif">Raspberry Pi 5 · Qwen2.5</text>
+        <rect x="95" y="275" width="170" height="44" rx="8" fill="#0a0a1a" stroke="#8855ff" stroke-width="1.5"/>
+        <text x="180" y="295" text-anchor="middle" fill="#a78bfa" font-size="10" font-family="sans-serif">🎙 离线声纹识别</text>
+        <text x="180" y="311" text-anchor="middle" fill="#6b7280" font-size="9" font-family="sans-serif">Resemblyzer · Vosk</text>
+        <rect x="260" y="275" width="180" height="44" rx="8" fill="#0a1a0a" stroke="#00aa55" stroke-width="1.5"/>
+        <text x="350" y="295" text-anchor="middle" fill="#34d399" font-size="10" font-family="sans-serif">🔐 安全嗅探引擎</text>
+        <text x="350" y="311" text-anchor="middle" fill="#6b7280" font-size="9" font-family="sans-serif">CPU · 温度 · 流量 · SSH</text>
+        <rect x="435" y="275" width="170" height="44" rx="8" fill="#1a0a0a" stroke="#ff6600" stroke-width="1.5"/>
+        <text x="520" y="295" text-anchor="middle" fill="#fb923c" font-size="10" font-family="sans-serif">💡 局域网控制</text>
+        <text x="520" y="311" text-anchor="middle" fill="#6b7280" font-size="9" font-family="sans-serif">Zigbee CC2652P</text>
       </svg>
     </div>
-    <div class="glass p-4 rounded-xl">
-      <h3 class="text-sm font-bold text-white mb-3">设备节点清单</h3>
-      <div class="space-y-2 text-xs">
-        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">Raspberry Pi 5</div><div class="text-gray-500 mono">Edge Node</div></div><span class="text-green-400 mono">● ONLINE</span></div>
-        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">RTX 4060 算力节点</div><div class="text-gray-500 mono">NVLink Arch</div></div><span class="text-green-400 mono">● ONLINE</span></div>
-        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">硬件级气隙继电器</div><div class="text-gray-500 mono">WAN Control</div></div><span id="topo-relay" class="text-green-400 mono">● CLOSED</span></div>
-        <div class="flex justify-between p-2 bg-gray-900/50 rounded border border-gray-800"><div><div class="text-white font-bold">Zigbee 协调器</div><div class="text-gray-500 mono">CC2652P LAN</div></div><span class="text-green-400 mono">● ONLINE</span></div>
+    <div class="card p-5">
+      <h3 class="text-sm font-semibold text-white mb-4">设备节点状态</h3>
+      <div class="space-y-3">
+        <div class="flex justify-between items-center p-3 bg-black/30 rounded-xl border border-white/5">
+          <div><div class="text-sm text-white font-medium">Raspberry Pi 5</div><div class="text-xs text-gray-500 mt-0.5">边缘计算节点</div></div>
+          <span class="flex items-center gap-1.5 text-xs text-green-400"><span class="status-dot bg-green-400"></span>在线</span>
+        </div>
+        <div class="flex justify-between items-center p-3 bg-black/30 rounded-xl border border-white/5">
+          <div><div class="text-sm text-white font-medium">RTX 4060 算力节点</div><div class="text-xs text-gray-500 mt-0.5">NVLink 架构</div></div>
+          <span class="flex items-center gap-1.5 text-xs text-green-400"><span class="status-dot bg-green-400"></span>在线</span>
+        </div>
+        <div class="flex justify-between items-center p-3 bg-black/30 rounded-xl border border-white/5">
+          <div><div class="text-sm text-white font-medium">物理气隙继电器</div><div class="text-xs text-gray-500 mt-0.5">广域网控制</div></div>
+          <span id="topo-relay" class="flex items-center gap-1.5 text-xs text-green-400"><span class="status-dot bg-green-400"></span>已闭合</span>
+        </div>
+        <div class="flex justify-between items-center p-3 bg-black/30 rounded-xl border border-white/5">
+          <div><div class="text-sm text-white font-medium">Zigbee 协调器</div><div class="text-xs text-gray-500 mt-0.5">CC2652P 局域网</div></div>
+          <span class="flex items-center gap-1.5 text-xs text-green-400"><span class="status-dot bg-green-400"></span>在线</span>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- TAB 4 -->
+<!-- ========== TAB 4: 操作日志 ========== -->
 <div id="tab-audit" class="tab-content p-6">
-  <h1 class="text-2xl font-bold text-white mb-6">安全审计日志 <span class="neon">Audit Trail</span></h1>
-  <div class="glass rounded-xl overflow-hidden">
-    <table class="w-full text-xs mono text-left">
-      <thead><tr class="text-gray-500 bg-gray-900/50"><th class="p-3">时间戳</th><th class="p-3">级别</th><th class="p-3">模块</th><th class="p-3">事件描述</th><th class="p-3">结果</th></tr></thead>
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-white">操作审计日志</h1>
+    <p class="text-sm text-gray-500 mt-1">所有安全事件与操作的完整记录</p>
+  </div>
+  <div class="card overflow-hidden">
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-xs text-gray-500 bg-black/30"><th class="p-4">时间</th><th class="p-4">级别</th><th class="p-4">模块</th><th class="p-4">事件描述</th><th class="p-4">结果</th></tr></thead>
       <tbody id="audit-tbody">
-        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33.821</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">SSH_SNIFFER</td><td class="p-3 text-white">SSH 暴力破解，60s内失败 5 次</td><td class="p-3 text-green-400">物理熔断</td></tr>
-        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:24:33.834</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">AIRGAP_CTRL</td><td class="p-3 text-white">触发继电器断电，广域网物理隔离(&lt;5ms)</td><td class="p-3 text-green-400">执行成功</td></tr>
-        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">01:18:07.443</td><td class="p-3 text-red-400 font-bold">CRITICAL</td><td class="p-3 text-gray-300">CPU_SNIFFER</td><td class="p-3 text-white">CPU 持续超阈值 (99.9%)</td><td class="p-3 text-green-400">物理熔断</td></tr>
-        <tr class="border-b border-gray-900"><td class="p-3 text-gray-400">00:48:22.100</td><td class="p-3 text-blue-400 font-bold">SYSTEM</td><td class="p-3 text-gray-300">JARVIS_ROUTER</td><td class="p-3 text-white">指令"断网"命中极速路由，跳过云端</td><td class="p-3 text-green-400">执行成功</td></tr>
+        <tr class="border-b border-white/4"><td class="p-4 text-gray-400 mono text-xs">01:24:33.821</td><td class="p-4"><span class="px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-xs">严重</span></td><td class="p-4 text-gray-400 text-xs">SSH 检测</td><td class="p-4 text-white text-xs">SSH 暴力破解，60秒内失败 5 次</td><td class="p-4 text-green-400 text-xs">物理隔离</td></tr>
+        <tr class="border-b border-white/4"><td class="p-4 text-gray-400 mono text-xs">01:24:33.834</td><td class="p-4"><span class="px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-xs">严重</span></td><td class="p-4 text-gray-400 text-xs">气隙控制</td><td class="p-4 text-white text-xs">触发继电器断电，广域网物理隔离（&lt;5ms）</td><td class="p-4 text-green-400 text-xs">执行成功</td></tr>
+        <tr class="border-b border-white/4"><td class="p-4 text-gray-400 mono text-xs">01:18:07.443</td><td class="p-4"><span class="px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-xs">严重</span></td><td class="p-4 text-gray-400 text-xs">CPU 监控</td><td class="p-4 text-white text-xs">CPU 持续超过阈值（99.9%）</td><td class="p-4 text-green-400 text-xs">物理熔断</td></tr>
+        <tr class="border-b border-white/4"><td class="p-4 text-gray-400 mono text-xs">00:48:22.100</td><td class="p-4"><span class="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 text-xs">系统</span></td><td class="p-4 text-gray-400 text-xs">指令路由</td><td class="p-4 text-white text-xs">「断网」指令命中快速通道，跳过云端推理</td><td class="p-4 text-green-400 text-xs">执行成功</td></tr>
       </tbody>
     </table>
   </div>
@@ -424,621 +465,391 @@
 
 <script>
   setInterval(()=>{ document.getElementById('clock').innerText=new Date().toTimeString().split(' ')[0]; },1000);
-  const sleep = ms => new Promise(r=>setTimeout(r,ms));
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  function switchTab(n,b){ document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active')); document.getElementById('tab-'+n).classList.add('active'); b.classList.add('active'); }
+  function quickCmd(t){ document.getElementById('cmd-input').value=t; processInput(false); }
 
-  function switchTab(name,btn){
-    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    document.getElementById('tab-'+name).classList.add('active');
-    btn.classList.add('active');
-  }
+  const SK_USERS='jarvis_users', SK_CUR='jarvis_current';
+  function getUsers(){ try{return JSON.parse(localStorage.getItem(SK_USERS)||'{}')}catch(e){return{}} }
+  function saveUsers(u){ localStorage.setItem(SK_USERS,JSON.stringify(u)); }
+  let currentUser='', currentPin='';
 
-  // ========== 存储键 ==========
-  const SK_USERS = 'jarvis_users';   // {username: {password, pin}}
-  const SK_CUR   = 'jarvis_current'; // 当前登录用户名
+  function setStep(n){ [0,1,2].forEach(i=>{ const d=document.getElementById('sdot-'+i); d.className='step-dot'+(i<n?' done':i===n?' active':''); }); }
 
-  function getUsers(){ try{ return JSON.parse(localStorage.getItem(SK_USERS)||'{}'); }catch(e){return{};} }
-  function saveUsers(u){ localStorage.setItem(SK_USERS, JSON.stringify(u)); }
-
-  let currentUser = '';
-  let currentPin  = '';
-
-  // ========== 步骤指示器 ==========
-  function setStep(n){
-    [0,1,2].forEach(i=>{
-      const d = document.getElementById('sdot-'+i);
-      if(i<n) d.className='step-dot done';
-      else if(i===n) d.className='step-dot active';
-      else d.className='step-dot';
-    });
-  }
-
-  // ========== 页面加载 ==========
   window.addEventListener('DOMContentLoaded',()=>{
-    const lastUser = localStorage.getItem(SK_CUR);
-    const users = getUsers();
-    if(lastUser && users[lastUser]){
-      // 有记录，直接进入PIN验证
-      currentUser = lastUser;
-      currentPin  = users[lastUser].pin || '';
-      showStepPin(currentPin ? 'verify' : 'set');
-    } else {
-      showLogin();
-    }
+    const lu=localStorage.getItem(SK_CUR), users=getUsers();
+    if(lu&&users[lu]){ currentUser=lu; currentPin=users[lu].pin||''; showStepPin(currentPin?'verify':'set'); }
+    else showLogin();
   });
 
-  // ========== 登录/注册 ==========
-  function showLogin(){
-    document.getElementById('step-welcome').classList.remove('hidden');
-    document.getElementById('step-pin-wrap').classList.add('hidden');
-    document.getElementById('step-voice').classList.add('hidden');
-    document.getElementById('form-login').classList.remove('hidden');
-    document.getElementById('form-register').classList.add('hidden');
-    setStep(0);
-  }
-  function showRegister(){
-    document.getElementById('form-login').classList.add('hidden');
-    document.getElementById('form-register').classList.remove('hidden');
-  }
+  function showLogin(){ document.getElementById('step-welcome').classList.remove('hidden'); document.getElementById('step-pin-wrap').classList.add('hidden'); document.getElementById('step-voice').classList.add('hidden'); document.getElementById('form-login').classList.remove('hidden'); document.getElementById('form-register').classList.add('hidden'); setStep(0); }
+  function showRegister(){ document.getElementById('form-login').classList.add('hidden'); document.getElementById('form-register').classList.remove('hidden'); }
 
   function doLogin(){
-    const u = document.getElementById('login-username').value.trim();
-    const p = document.getElementById('login-password').value;
-    const users = getUsers();
-    if(!u||!p){ document.getElementById('login-error').innerText='请填写用户名和密码'; return; }
-    if(!users[u]){ document.getElementById('login-error').innerText='用户不存在'; return; }
-    if(users[u].password !== p){ document.getElementById('login-error').innerText='密码错误'; return; }
-    currentUser = u;
-    currentPin  = users[u].pin || '';
-    localStorage.setItem(SK_CUR, u);
-    document.getElementById('login-error').innerText='';
-    showStepPin(currentPin ? 'verify' : 'set');
+    const u=document.getElementById('login-username').value.trim(), p=document.getElementById('login-password').value, users=getUsers();
+    if(!u||!p){document.getElementById('login-error').innerText='请填写用户名和密码';return;}
+    if(!users[u]){document.getElementById('login-error').innerText='用户不存在';return;}
+    if(users[u].password!==p){document.getElementById('login-error').innerText='密码错误';return;}
+    currentUser=u; currentPin=users[u].pin||''; localStorage.setItem(SK_CUR,u);
+    document.getElementById('login-error').innerText=''; showStepPin(currentPin?'verify':'set');
   }
 
   function doRegister(){
-    const u  = document.getElementById('reg-username').value.trim();
-    const p  = document.getElementById('reg-password').value;
-    const p2 = document.getElementById('reg-password2').value;
-    if(!u||u.length<2||u.length>16){ document.getElementById('reg-error').innerText='用户名需 2-16 位'; return; }
-    if(!p||p.length<4){ document.getElementById('reg-error').innerText='密码至少 4 位'; return; }
-    if(p!==p2){ document.getElementById('reg-error').innerText='两次密码不一致'; return; }
-    const users = getUsers();
-    if(users[u]){ document.getElementById('reg-error').innerText='用户名已存在'; return; }
-    users[u] = { password:p, pin:'' };
-    saveUsers(users);
-    currentUser = u;
-    currentPin  = '';
-    localStorage.setItem(SK_CUR, u);
-    document.getElementById('reg-error').innerText='';
-    showStepPin('set');
+    const u=document.getElementById('reg-username').value.trim(), p=document.getElementById('reg-password').value, p2=document.getElementById('reg-password2').value;
+    if(!u||u.length<2||u.length>16){document.getElementById('reg-error').innerText='用户名需 2-16 位';return;}
+    if(!p||p.length<4){document.getElementById('reg-error').innerText='密码至少 4 位';return;}
+    if(p!==p2){document.getElementById('reg-error').innerText='两次密码不一致';return;}
+    const users=getUsers(); if(users[u]){document.getElementById('reg-error').innerText='用户名已存在';return;}
+    users[u]={password:p,pin:''}; saveUsers(users); currentUser=u; currentPin=''; localStorage.setItem(SK_CUR,u);
+    document.getElementById('reg-error').innerText=''; showStepPin('set');
   }
 
-  // ========== PIN 步骤 ==========
-  let mainPinValue = '';
-  let mainPinFirst = '';
-  let mainPinMode  = 'set'; // 'set' | 'verify'
-
+  let mpv='', mpf='', mpm='set';
   function showStepPin(mode){
-    mainPinMode  = mode;
-    mainPinValue = '';
-    mainPinFirst = '';
-    document.getElementById('step-welcome').classList.add('hidden');
-    document.getElementById('step-pin-wrap').classList.remove('hidden');
-    document.getElementById('step-voice').classList.add('hidden');
-    // 生成节点ID
-    const nodeId = 'NODE-' + currentUser.toUpperCase().substring(0,4).padEnd(4,'X') + Math.floor(Math.random()*0xFFFF).toString(16).toUpperCase().padStart(4,'0');
-    document.getElementById('pin-node-label').innerText = nodeId;
-    if(mode==='set'){
-      document.getElementById('pin-title').innerText = '设定近点授权密码';
-      document.getElementById('pin-subtitle').innerText = '请设定您的专属 4 位 PIN 码';
-      document.getElementById('pin-hint-main').innerText = '输入新 PIN 码';
-      document.getElementById('pin-hint-main').className = 'text-[#00ffcc]/60 text-xs mono mb-3 h-4';
+    mpm=mode; mpv=''; mpf='';
+    document.getElementById('step-welcome').classList.add('hidden'); document.getElementById('step-pin-wrap').classList.remove('hidden'); document.getElementById('step-voice').classList.add('hidden');
+    if(mode==='set'){ document.getElementById('pin-title').innerText='设定安全 PIN 码'; document.getElementById('pin-subtitle').innerText='用于高权限操作的二次验证'; document.getElementById('pin-hint-main').innerText='请输入 4 位 PIN 码'; }
+    else { document.getElementById('pin-title').innerText='身份验证'; document.getElementById('pin-subtitle').innerText=`欢迎回来，${currentUser}`; document.getElementById('pin-hint-main').innerText='请输入您的 PIN 码'; }
+    document.getElementById('pin-hint-main').className='text-[#00ffcc]/60 text-xs mb-4 h-4';
+    updMPD(); setStep(1);
+  }
+  function updMPD(){ document.querySelectorAll('#pin-dots-main .pin-dot').forEach((d,i)=>d.classList.toggle('filled',i<mpv.length)); }
+  function mainPinInput(d){ if(mpv.length>=4)return; mpv+=d; updMPD(); if(mpv.length===4)setTimeout(handleMP,200); }
+  function mainPinDel(){ mpv=mpv.slice(0,-1); updMPD(); }
+  function mainPinClear(){ mpv=''; updMPD(); }
+  function handleMP(){
+    if(mpm==='set'){
+      if(!mpf){ mpf=mpv; mpv=''; updMPD(); document.getElementById('pin-hint-main').innerText='请再次输入确认'; document.getElementById('pin-hint-main').className='text-yellow-400 text-xs mb-4 h-4'; }
+      else if(mpv===mpf){ const u=getUsers(); u[currentUser].pin=mpv; saveUsers(u); currentPin=mpv; addLog('PIN 码设定成功','success'); addAuditEvent('系统','PIN 设置',`用户 ${currentUser} 完成 PIN 设定`,'成功','text-green-400'); goVoice(); }
+      else { mpf=''; mpv=''; updMPD(); document.getElementById('pin-hint-main').innerText='两次输入不一致，请重新设定'; document.getElementById('pin-hint-main').className='text-red-400 text-xs mb-4 h-4'; shakeEl('pin-dots-main'); }
     } else {
-      document.getElementById('pin-title').innerText = '近点物理授权';
-      document.getElementById('pin-subtitle').innerText = `欢迎回来，${currentUser}`;
-      document.getElementById('pin-hint-main').innerText = '输入 PIN 码';
-      document.getElementById('pin-hint-main').className = 'text-[#00ffcc]/60 text-xs mono mb-3 h-4';
-    }
-    updateMainPinDots();
-    setStep(1);
-  }
-
-  function updateMainPinDots(){
-    const dots = document.querySelectorAll('#pin-dots-main .pin-dot');
-    dots.forEach((d,i)=>d.classList.toggle('filled', i<mainPinValue.length));
-  }
-  function mainPinInput(digit){
-    if(mainPinValue.length>=4) return;
-    mainPinValue+=digit; updateMainPinDots();
-    if(mainPinValue.length===4) setTimeout(handleMainPin,200);
-  }
-  function mainPinDel(){ mainPinValue=mainPinValue.slice(0,-1); updateMainPinDots(); }
-  function mainPinClear(){ mainPinValue=''; updateMainPinDots(); }
-
-  function handleMainPin(){
-    if(mainPinMode==='set'){
-      if(!mainPinFirst){
-        mainPinFirst=mainPinValue; mainPinValue=''; updateMainPinDots();
-        document.getElementById('pin-hint-main').innerText='请再次输入确认';
-        document.getElementById('pin-hint-main').className='text-yellow-400 text-xs mono mb-3 h-4';
-      } else {
-        if(mainPinValue===mainPinFirst){
-          const users=getUsers();
-          users[currentUser].pin=mainPinValue;
-          saveUsers(users);
-          currentPin=mainPinValue;
-          addLog(`[AUTH] 用户 ${currentUser} PIN 设定成功`,'success');
-          addAuditEvent('SYSTEM','PIN_SETUP',`用户 ${currentUser} 首次 PIN 设定完成`,'写入成功','text-green-400');
-          goToVoiceStep();
-        } else {
-          mainPinFirst=''; mainPinValue=''; updateMainPinDots();
-          document.getElementById('pin-hint-main').innerText='两次输入不一致，请重新设定';
-          document.getElementById('pin-hint-main').className='text-red-400 text-xs mono mb-3 h-4';
-          shakeEl('pin-dots-main');
-        }
-      }
-    } else {
-      if(mainPinValue===currentPin){
-        addLog(`[AUTH] ${currentUser} PIN 验证通过 (近点授权)`,'success');
-        addAuditEvent('SYSTEM','PIN_AUTH',`用户 ${currentUser} PIN 验证通过`,'近点授权成功','text-green-400');
-        goToVoiceStep();
-      } else {
-        mainPinValue=''; updateMainPinDots();
-        document.getElementById('pin-hint-main').innerText='PIN 错误，请重试';
-        document.getElementById('pin-hint-main').className='text-red-400 text-xs mono mb-3 h-4';
-        shakeEl('pin-dots-main');
-      }
+      if(mpv===currentPin){ addLog('PIN 验证通过','success'); addAuditEvent('系统','PIN 验证',`用户 ${currentUser} 验证通过`,'成功','text-green-400'); goVoice(); }
+      else { mpv=''; updMPD(); document.getElementById('pin-hint-main').innerText='PIN 错误，请重试'; document.getElementById('pin-hint-main').className='text-red-400 text-xs mb-4 h-4'; shakeEl('pin-dots-main'); }
     }
   }
+  function goVoice(){ document.getElementById('step-pin-wrap').classList.add('hidden'); document.getElementById('step-voice').classList.remove('hidden'); document.getElementById('voice-enroll-text').innerText=`"J.A.R.V.I.S 边缘节点，主理人身份绑定，授权码 ${currentUser}-Zero-One。"`; setStep(2); }
+  function shakeEl(id){ const el=document.getElementById(id); el.style.animation='none'; el.offsetHeight; el.style.animation='shake 0.4s ease'; }
 
-  function goToVoiceStep(){
-    document.getElementById('step-pin-wrap').classList.add('hidden');
-    document.getElementById('step-voice').classList.remove('hidden');
-    document.getElementById('voice-enroll-text').innerText=`"J.A.R.V.I.S 边缘节点，主理人身份绑定，授权码 ${currentUser}-Zero-One。"`;
-    setStep(2);
-  }
-
-  function shakeEl(id){
-    const el=document.getElementById(id);
-    el.style.animation='none'; el.offsetHeight; el.style.animation='shake 0.4s ease';
-  }
-
-  // ========== 声纹录入 ==========
-  let enrolledVoiceBlob=null;
+  let evb=null;
   async function startEnrollment(){
-    const btn=document.getElementById('btn-enroll-start');
-    const logDiv=document.getElementById('enroll-log');
-    btn.disabled=true; btn.innerHTML='录入中...';
-    const waveDiv=document.createElement('div');
-    waveDiv.className='voice-wave justify-center mb-4';
-    waveDiv.innerHTML=Array(7).fill('<div class="voice-bar"></div>').join('');
-    btn.parentNode.insertBefore(waveDiv,btn);
-    let realMic=false;
+    const btn=document.getElementById('btn-enroll-start'), logDiv=document.getElementById('enroll-log');
+    btn.disabled=true; btn.innerHTML='录入中，请朗读...';
+    const wd=document.createElement('div'); wd.className='voice-wave justify-center mb-3'; wd.innerHTML=Array(7).fill('<div class="voice-bar"></div>').join(''); btn.parentNode.insertBefore(wd,btn);
+    let rm=false;
     try{
-      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-      const recorder=new MediaRecorder(stream);
-      const chunks=[];
-      recorder.ondataavailable=e=>chunks.push(e.data);
-      recorder.start();
-      const lp=document.createElement('p');
-      lp.className='text-[#00ffcc] text-xs mono';
-      lp.innerText='🎙️ 麦克风已开启，正在采集音频（3秒）...';
-      logDiv.appendChild(lp);
-      addLog(' 麦克风已开启，正在采集音频...','success');
-      await sleep(3000);
-      recorder.stop();
-      stream.getTracks().forEach(t=>t.stop());
-      await new Promise(res=>recorder.onstop=res);
-      enrolledVoiceBlob=new Blob(chunks,{type:'audio/webm'});
-      realMic=true;
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true}), rec=new MediaRecorder(stream), chunks=[];
+      rec.ondataavailable=e=>chunks.push(e.data); rec.start();
+      const lp=document.createElement('p'); lp.className='text-[#00ffcc] text-xs'; lp.innerText='🎙️ 正在采集声纹（3秒）...'; logDiv.appendChild(lp);
+      addLog('麦克风已开启，采集声纹中...','success');
+      await sleep(3000); rec.stop(); stream.getTracks().forEach(t=>t.stop());
+      await new Promise(r=>rec.onstop=r); evb=new Blob(chunks,{type:'audio/webm'}); rm=true;
     }catch(e){
-      const lpe=document.createElement('p');
-      lpe.className='text-yellow-400 text-xs mono';
-      lpe.innerText='⚠️ 麦克风不可用，使用模拟声纹数据';
-      logDiv.appendChild(lpe);
-      addLog(' 麦克风不可用，切换模拟模式','warn');
-      await sleep(800);
-    }
-    const steps=[
-      {msg:'📊 提取频域特征向量 (d-vector)...',cls:'text-gray-400'},
-      {msg:'✅ 声纹特征提取成功',cls:'text-[#00ffcc]'},
-      {msg:`💾 写入本地存储 /local/${currentUser}_voice.npy`,cls:'text-gray-400'},
-      {msg:`🔒 主理人身份绑定完成 (${currentUser})`,cls:'text-[#00ffcc]'},
-    ];
-    for(const s of steps){
-      await sleep(900);
-      const p=document.createElement('p');
-      p.className=`${s.cls} text-xs mono`;
-      p.innerText=s.msg;
-      logDiv.appendChild(p);
-      addLog(s.msg.replace(/[📊✅💾🔒]/g,'').trim(),'success');
-    }
-    await sleep(600);
-    waveDiv.remove();
-    addAuditEvent('SYSTEM','VOICE_ENROLL',
-      `${currentUser} 声纹录入完成（${realMic?'真实音频':'模拟'}），写入本地声纹库`,
-      '绑定成功','text-green-400');
-    document.getElementById('master-badge').className='px-2 py-0.5 rounded text-xs mono badge-enrolled';
-    document.getElementById('master-badge').innerText=`✓ ${currentUser} 已绑定`;
+      const lpe=document.createElement('p'); lpe.className='text-yellow-400 text-xs';
+    lpe.innerText='⚠️ 麦克风不可用，使用模拟声纹';
+    logDiv.appendChild(lpe);
+    addLog('麦克风不可用，切换模拟模式','warn');
     await sleep(800);
-    document.getElementById('init-overlay').style.opacity='0';
-    document.getElementById('init-overlay').style.transition='opacity 0.6s';
-    await sleep(600);
-    document.getElementById('init-overlay').style.display='none';
-    appendChat('ai',`✅ 主理人 <strong class="text-white">${currentUser}</strong> 声纹绑定完成。<br><br>当前安全策略：<br>• 近点操作：PIN 码授权<br>• 远端语音指令：声纹验证 + 动态口令防重放<br>• 高危操作（恢复网络）：双因子确认<br><br>系统已就绪，等待您的指令。`);
+  }
+  const steps=[
+    {msg:'📊 提取声纹特征向量...',cls:'text-gray-400'},
+    {msg:'✅ 声纹特征提取成功',cls:'text-[#00ffcc]'},
+    {msg:`💾 声纹数据已安全存储`,cls:'text-gray-400'},
+    {msg:`🔒 身份绑定完成（${currentUser}）`,cls:'text-[#00ffcc]'},
+  ];
+  for(const s of steps){
+    await sleep(900);
+    const p=document.createElement('p'); p.className=s.cls+' text-xs'; p.innerText=s.msg; logDiv.appendChild(p);
+    addLog(s.msg.replace(/[📊✅💾🔒]/g,'').trim(),'success');
+  }
+  await sleep(500); wd.remove();
+  addAuditEvent('系统','声纹录入',`${currentUser} 声纹绑定完成（${rm?'真实音频':'模拟'}）`,'成功','text-green-400');
+  document.getElementById('master-badge').className='px-3 py-1 rounded-full text-xs badge-on';
+  document.getElementById('master-badge').innerText=`✓ ${currentUser}`;
+  await sleep(700);
+  document.getElementById('init-overlay').style.transition='opacity 0.6s';
+  document.getElementById('init-overlay').style.opacity='0';
+  await sleep(600);
+  document.getElementById('init-overlay').style.display='none';
+  appendChat('ai',`✅ 欢迎，<strong class="text-white">${currentUser}</strong>！身份绑定完成。<br><br>当前安全策略已激活：<br>• 🔐 高权限操作需 PIN 验证<br>• 🎙️ 语音指令需声纹 + 动态口令双重确认<br>• ⚡ 断网 / 开灯 / 关灯等指令可直接执行<br><br>系统就绪，请开始操作。`);
 }
 
 // ========== 声纹角色切换 ==========
-let voiceRole = 'owner';
+let voiceRole='owner';
 function setVoiceRole(role){
-  voiceRole = role;
-  document.getElementById('role-owner').className = role==='owner'
-    ? 'flex-1 py-1.5 text-xs rounded mono bg-[#00ffcc]/20 text-[#00ffcc] border border-[#00ffcc]/40'
-    : 'flex-1 py-1.5 text-xs rounded mono bg-gray-800 text-gray-500 border border-gray-700';
-  document.getElementById('role-stranger').className = role==='stranger'
-    ? 'flex-1 py-1.5 text-xs rounded mono bg-red-900/30 text-red-400 border border-red-500/40'
-    : 'flex-1 py-1.5 text-xs rounded mono bg-gray-800 text-gray-500 border border-gray-700';
+  voiceRole=role;
+  document.getElementById('role-owner').className=role==='owner'
+    ?'flex-1 py-1.5 text-xs rounded-lg bg-[#00ffcc]/15 text-[#00ffcc] border border-[#00ffcc]/30'
+    :'flex-1 py-1.5 text-xs rounded-lg bg-white/5 text-gray-500 border border-white/10';
+  document.getElementById('role-stranger').className=role==='stranger'
+    ?'flex-1 py-1.5 text-xs rounded-lg bg-red-500/15 text-red-400 border border-red-500/30'
+    :'flex-1 py-1.5 text-xs rounded-lg bg-white/5 text-gray-500 border border-white/10';
 }
 
 // ========== 日志工具 ==========
-function addLog(msg, type='info'){
-  const term = document.getElementById('terminal-logs');
-  const div  = document.createElement('div');
-  const t    = new Date().toTimeString().split(' ')[0];
-  const color= type==='error'?'text-red-400':type==='warn'?'text-yellow-400':type==='success'?'text-[#00ffcc]':'text-gray-400';
-  div.className = `log-row ${color}`;
-  div.innerText  = `[${t}] ${msg}`;
-  term.appendChild(div);
-  term.scrollTop = term.scrollHeight;
+function addLog(msg,type='info'){
+  const term=document.getElementById('terminal-logs');
+  const div=document.createElement('div');
+  const t=new Date().toTimeString().split(' ')[0];
+  const color=type==='error'?'text-red-400':type==='warn'?'text-yellow-400':type==='success'?'text-[#00ffcc]':'text-gray-500';
+  div.className=`log-row ${color}`;
+  div.innerText=`${t}  ${msg}`;
+  term.appendChild(div); term.scrollTop=term.scrollHeight;
 }
 
-function addThreatEvent(type, source, severity, status, statusColor){
-  const tbody = document.getElementById('threat-tbody');
-  const tr    = document.createElement('tr');
-  tr.className = 'border-b border-gray-900 new-row';
-  const t = new Date().toTimeString().split(' ')[0];
-  const sevHtml = severity==='CRITICAL'
-    ? `<span class="text-red-400 font-bold">CRITICAL</span>`
-    : severity==='HIGH'
-      ? `<span class="text-orange-400 font-bold">HIGH</span>`
-      : `<span class="text-yellow-400">${severity}</span>`;
-  tr.innerHTML = `<td class="p-3 text-gray-400">${t}</td><td class="p-3 text-white">${type}</td><td class="p-3 text-gray-400">${source}</td><td class="p-3">${sevHtml}</td><td class="p-3 ${statusColor}">${status}</td>`;
-  tbody.insertBefore(tr, tbody.firstChild);
-  document.getElementById('stat-intercepts').innerText = parseInt(document.getElementById('stat-intercepts').innerText)+1;
+function addThreatEvent(type,source,severity,status,statusColor){
+  const tbody=document.getElementById('threat-tbody');
+  const tr=document.createElement('tr'); tr.className='border-b border-white/4 new-row';
+  const t=new Date().toTimeString().split(' ')[0];
+  const badge=severity==='CRITICAL'
+    ?'<span class="px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-xs">严重</span>'
+    :severity==='HIGH'
+      ?'<span class="px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-400 text-xs">高危</span>'
+      :`<span class="px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 text-xs">${severity}</span>`;
+  tr.innerHTML=`<td class="p-4 text-gray-400 mono text-xs">${t}</td><td class="p-4 text-white text-sm">${type}</td><td class="p-4 text-gray-400 text-xs">${source}</td><td class="p-4">${badge}</td><td class="p-4 ${statusColor} text-xs">${status}</td>`;
+  tbody.insertBefore(tr,tbody.firstChild);
+  document.getElementById('stat-intercepts').innerText=parseInt(document.getElementById('stat-intercepts').innerText)+1;
 }
 
-function addAuditEvent(level, mod, desc, result, rColor){
-  const tbody = document.getElementById('audit-tbody');
-  const tr    = document.createElement('tr');
-  tr.className = 'border-b border-gray-900 new-row';
-  const d = new Date();
-  const t = d.toTimeString().split(' ')[0]+'.'+String(d.getMilliseconds()).padStart(3,'0');
-  const lHtml = level==='CRITICAL'
-    ? `<span class="text-red-400 font-bold">CRITICAL</span>`
-    : level==='SYSTEM'
-      ? `<span class="text-blue-400 font-bold">SYSTEM</span>`
-      : level==='HIGH'
-        ? `<span class="text-orange-400 font-bold">HIGH</span>`
-        : `<span class="text-yellow-400">${level}</span>`;
-  tr.innerHTML = `<td class="p-3 text-gray-400">${t}</td><td class="p-3">${lHtml}</td><td class="p-3 text-gray-300">${mod}</td><td class="p-3 text-white">${desc}</td><td class="p-3 ${rColor}">${result}</td>`;
-  tbody.insertBefore(tr, tbody.firstChild);
+function addAuditEvent(level,mod,desc,result,rColor){
+  const tbody=document.getElementById('audit-tbody');
+  const tr=document.createElement('tr'); tr.className='border-b border-white/4 new-row';
+  const d=new Date();
+  const t=d.toTimeString().split(' ')[0]+'.'+String(d.getMilliseconds()).padStart(3,'0');
+  const badge=level==='严重'||level==='CRITICAL'
+    ?'<span class="px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-xs">严重</span>'
+    :level==='系统'||level==='SYSTEM'
+      ?'<span class="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 text-xs">系统</span>'
+      :level==='HIGH'
+        ?'<span class="px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-400 text-xs">高危</span>'
+        :`<span class="px-2 py-0.5 rounded-full bg-gray-500/15 text-gray-400 text-xs">${level}</span>`;
+  tr.innerHTML=`<td class="p-4 text-gray-400 mono text-xs">${t}</td><td class="p-4">${badge}</td><td class="p-4 text-gray-400 text-xs">${mod}</td><td class="p-4 text-white text-xs">${desc}</td><td class="p-4 ${rColor} text-xs">${result}</td>`;
+  tbody.insertBefore(tr,tbody.firstChild);
 }
 
 // ========== 聊天渲染 ==========
-function appendChat(role, content, isTicket=false){
-  const box  = document.getElementById('chat-output');
-  const wrap = document.createElement('div');
-  const t    = new Date().toTimeString().split(' ')[0];
+function appendChat(role,content,isAlert=false){
+  const box=document.getElementById('chat-output');
+  const wrap=document.createElement('div');
+  const t=new Date().toTimeString().split(' ')[0];
   if(role==='user'){
-    const initials = currentUser ? currentUser.substring(0,2).toUpperCase() : 'U';
+    const ini=currentUser?currentUser.substring(0,2).toUpperCase():'U';
     wrap.className='flex gap-3 flex-row-reverse';
-    wrap.innerHTML=`<div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center shrink-0 text-white text-xs font-bold">${initials}</div><div class="flex-1 text-right"><div class="text-xs text-gray-500 mb-1 mono">${t}</div><div class="inline-block bg-gray-800 text-white text-sm px-4 py-2 rounded-lg rounded-tr-none">${content}</div></div>`;
+    wrap.innerHTML=`<div class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-white text-xs font-bold">${ini}</div><div class="flex-1 text-right"><div class="text-xs text-gray-500 mb-1.5">${currentUser||'用户'} · ${t}</div><div class="inline-block chat-bubble-u text-sm text-gray-200">${content}</div></div>`;
   } else {
-    const body = isTicket
-      ? `<div class="bg-red-900/20 border border-red-500/40 rounded-lg p-4 mt-1"><div class="text-red-400 font-bold text-sm mb-3 border-b border-red-500/30 pb-2">⚠ 离线安全威胁评估报告</div><div class="grid grid-cols-2 gap-3 mb-3 text-xs"><div><div class="text-gray-500">威胁等级</div><div class="text-red-400 mono font-bold">CRITICAL</div></div><div><div class="text-gray-500">隔离状态</div><div class="neon mono font-bold">AIR-GAP ISOLATED</div></div></div><div class="text-sm text-gray-300">${content}</div><div class="mt-3 pt-2 border-t border-red-500/20 text-xs text-gray-500">输入 <span class="neon mono">恢复网络</span> 解除熔断</div></div>`
-      : `<div class="text-sm text-gray-300 leading-relaxed jarvis-body">${content}</div>`;
+    const body=isAlert
+      ?`<div class="bg-red-500/8 border border-red-500/25 rounded-xl p-4 mt-1"><div class="text-red-400 font-semibold text-sm mb-2">⚠ 安全威胁报告</div><div class="grid grid-cols-2 gap-3 mb-3 text-xs"><div><div class="text-gray-500">威胁等级</div><div class="text-red-400 font-bold">严重</div></div><div><div class="text-gray-500">隔离状态</div><div class="neon font-bold">已物理隔离</div></div></div><div class="text-sm text-gray-300 leading-relaxed">${content}</div><div class="mt-3 pt-2 border-t border-red-500/15 text-xs text-gray-500">输入 <span class="neon">恢复网络</span> 或点击「恢复系统状态」解除隔离</div></div>`
+      :`<div class="chat-bubble-j text-sm text-gray-200 leading-relaxed jarvis-body">${content}</div>`;
     wrap.className='flex gap-3';
-    wrap.innerHTML=`<div class="w-8 h-8 rounded bg-[#00ffcc]/20 border border-[#00ffcc] flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div><div class="flex-1"><div class="text-xs text-gray-500 mb-1 mono">JARVIS_ROUTER | ${t}</div>${body}</div>`;
+    wrap.innerHTML=`<div class="w-9 h-9 rounded-xl bg-[#00ffcc]/15 border border-[#00ffcc]/30 flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div><div class="flex-1"><div class="text-xs text-gray-500 mb-1.5">J.A.R.V.I.S · ${t}</div>${body}</div>`;
   }
-  box.appendChild(wrap);
-  box.scrollTop = box.scrollHeight;
-  return wrap.querySelector('.jarvis-body') || null;
+  box.appendChild(wrap); box.scrollTop=box.scrollHeight;
+  return wrap.querySelector('.jarvis-body')||null;
 }
 
 function createJarvisBubble(){
-  const box  = document.getElementById('chat-output');
-  const t    = new Date().toTimeString().split(' ')[0];
-  const wrap = document.createElement('div');
-  wrap.className = 'flex gap-3';
-  wrap.innerHTML = `<div class="w-8 h-8 rounded bg-[#00ffcc]/20 border border-[#00ffcc] flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div><div class="flex-1"><div class="text-xs text-gray-500 mb-1 mono">JARVIS_ROUTER | ${t}</div><div class="text-sm text-gray-300 leading-relaxed jarvis-body"></div></div>`;
-  box.appendChild(wrap);
-  box.scrollTop = box.scrollHeight;
+  const box=document.getElementById('chat-output');
+  const t=new Date().toTimeString().split(' ')[0];
+  const wrap=document.createElement('div'); wrap.className='flex gap-3';
+  wrap.innerHTML=`<div class="w-9 h-9 rounded-xl bg-[#00ffcc]/15 border border-[#00ffcc]/30 flex items-center justify-center shrink-0 text-[#00ffcc] font-bold text-sm">J</div><div class="flex-1"><div class="text-xs text-gray-500 mb-1.5">J.A.R.V.I.S · ${t}</div><div class="chat-bubble-j text-sm text-gray-200 leading-relaxed jarvis-body"></div></div>`;
+  box.appendChild(wrap); box.scrollTop=box.scrollHeight;
   return wrap.querySelector('.jarvis-body');
 }
 
-function typeWriterEffect(el, text){
-  if(!el) return;
-  el.innerHTML='';
-  let i=0;
-  const timer=setInterval(()=>{
-    if(i<text.length){
-      el.innerHTML=text.substring(0,i+1)+'<span class="typing-cursor"></span>';
-      i++;
-      document.getElementById('chat-output').scrollTop=document.getElementById('chat-output').scrollHeight;
-    } else {
-      clearInterval(timer);
-      el.innerHTML=text;
-    }
-  },28);
+function typeWriter(el,text){
+  if(!el)return; el.innerHTML=''; let i=0;
+  const iv=setInterval(()=>{
+    if(i<text.length){ el.innerHTML=text.substring(0,i+1)+'<span class="typing-cursor"></span>'; i++; document.getElementById('chat-output').scrollTop=document.getElementById('chat-output').scrollHeight; }
+    else{ clearInterval(iv); el.innerHTML=text; }
+  },26);
 }
 
 // ========== 系统状态 ==========
-let sysState      = { relay:'ONLINE', attacking:false, challenge:false };
-let lastAttackType= '';
-let isAIThinking  = false;
-let challengeCode = '';
+let sysState={relay:'ONLINE',attacking:false,challenge:false};
+let lastAttackType='', isAIThinking=false, challengeCode='';
 
 // ========== 语音识别 ==========
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition = null;
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let recognition=null;
 if(SR){
-  recognition = new SR();
-  recognition.lang='zh-CN';
-  recognition.interimResults=false;
-  recognition.onstart=()=>{
-    document.getElementById('btn-mic').classList.add('listening');
-    document.getElementById('cmd-input').placeholder='正在聆听...';
-  };
-  recognition.onend=()=>{
-    document.getElementById('btn-mic').classList.remove('listening');
-    document.getElementById('cmd-input').placeholder='输入指令或点击麦克风语音输入...';
-  };
-  recognition.onresult=(e)=>{
-    const txt=e.results[0][0].transcript.replace(/[。，？！、]/g,'');
-    document.getElementById('cmd-input').value=txt;
-    processInput(true);
-  };
-  recognition.onerror=(e)=>addLog('[VOICE] 识别失败: '+e.error,'error');
+  recognition=new SR(); recognition.lang='zh-CN'; recognition.interimResults=false;
+  recognition.onstart=()=>{ document.getElementById('btn-mic').classList.add('listening'); document.getElementById('cmd-input').placeholder='正在聆听...'; };
+  recognition.onend=()=>{ document.getElementById('btn-mic').classList.remove('listening'); document.getElementById('cmd-input').placeholder='输入指令或问题...'; };
+  recognition.onresult=e=>{ const txt=e.results[0][0].transcript.replace(/[。，？！、]/g,''); document.getElementById('cmd-input').value=txt; processInput(true); };
+  recognition.onerror=e=>addLog('语音识别失败: '+e.error,'error');
 }
-document.getElementById('btn-mic').addEventListener('click',()=>{
-  if(recognition) recognition.start();
-  else alert('浏览器不支持语音识别，请用 Chrome/Edge');
-});
+document.getElementById('btn-mic').addEventListener('click',()=>{ if(recognition)recognition.start(); else alert('请使用 Chrome 或 Edge 浏览器以启用语音功能'); });
 
 // ========== 核心输入处理 ==========
 async function processInput(isVoice=false){
-  if(isAIThinking) return;
-  const inp  = document.getElementById('cmd-input');
-  const text = inp.value.trim();
-  if(!text) return;
-  inp.value='';
-  appendChat('user', isVoice ? `🎙️ ${text}` : text);
+  if(isAIThinking)return;
+  const inp=document.getElementById('cmd-input'), text=inp.value.trim();
+  if(!text)return; inp.value='';
+  appendChat('user',isVoice?`🎙️ ${text}`:text);
 
-  // --- 动态口令质询响应 ---
+  // 动态口令质询
   if(sysState.challenge){
-    const userCode=text.replace(/\s/g,'').replace(/[^\d]/g,'');
-    if(userCode===challengeCode){
+    const code=text.replace(/\s/g,'').replace(/[^\d]/g,'');
+    if(code===challengeCode){
       sysState.challenge=false;
-      addLog('[AUTH] 动态口令验证通过 ✓ 活体检测成功','success');
-      addAuditEvent('SYSTEM','AUTH_MODULE','动态口令验证通过，解除物理隔离','验证通过','text-green-400');
+      addLog('动态口令验证通过，解除物理隔离','success');
+      addAuditEvent('系统','身份验证','动态口令验证通过，解除隔离','成功','text-green-400');
       doResetSystem();
     } else {
-      sysState.challenge=false;
-      lastAttackType='voice';
-      addLog('[AUTH] 口令错误！疑似录音回放攻击','error');
-      addThreatEvent('录音回放攻击','本地音频','HIGH','✗ 验证失败','text-red-400');
-      addAuditEvent('HIGH','AUTH_MODULE','动态口令不匹配，疑似录音回放','拦截成功','text-green-400');
-      appendChat('ai','🚫 动态口令验证失败！已识别为<span class="text-red-400 font-bold">录音回放攻击</span>，维持物理隔离。');
+      sysState.challenge=false; lastAttackType='voice';
+      addLog('口令错误，疑似录音回放攻击','error');
+      addThreatEvent('录音回放攻击','本地音频','HIGH','✗ 已拦截','text-red-400');
+      addAuditEvent('HIGH','身份验证','动态口令不匹配，疑似录音回放','拦截成功','text-green-400');
+      appendChat('ai','🚫 动态口令验证失败，已识别为<span class="text-red-400 font-bold">录音回放攻击</span>，维持物理隔离状态。');
     }
     return;
   }
 
-  // --- 声纹鉴权 ---
-  const needVoiceprint = isVoice || text==='恢复网络';
-  if(needVoiceprint){
-    addLog('[VOICE] 离线声学模型提取声纹特征...','info');
+  // 声纹鉴权
+  const needVP=isVoice||text==='恢复网络';
+  if(needVP){
+    addLog('声学模型提取声纹特征中...','info');
     const bubble=createJarvisBubble();
-    bubble.innerHTML='<span class="thinking text-gray-500 mono text-xs">▌ 声纹特征比对中 (Voiceprint Matching)...</span>';
+    bubble.innerHTML='<span class="thinking text-gray-500 text-xs">正在验证声纹身份...</span>';
     await sleep(1200);
     if(voiceRole==='stranger'){
-      addLog('[AUTH] 声纹匹配度 11% — 拒绝访问','error');
-      bubble.innerHTML='🚫 <span class="text-red-400 font-bold">声纹不匹配！</span><br><span class="text-gray-400 text-xs">匹配度 11%，非授权声纹特征，指令已拦截。</span>';
-      addThreatEvent('非法声纹指令','本地麦克风','HIGH','✗ 拦截成功','text-green-400');
-      addAuditEvent('HIGH','VOICE_AUTH','声纹不匹配(11%)，拒绝执行','拦截成功','text-green-400');
+      addLog('声纹匹配度 11% — 拒绝访问','error');
+      bubble.innerHTML='🚫 <span class="text-red-400 font-bold">声纹验证失败</span><br><span class="text-gray-400 text-xs">匹配度仅 11%，非授权用户，指令已拦截。</span>';
+      addThreatEvent('非授权声纹指令','麦克风','HIGH','✗ 已拦截','text-green-400');
+      addAuditEvent('HIGH','声纹验证','声纹不匹配(11%)，拒绝执行','拦截成功','text-green-400');
       return;
     } else {
-      addLog(`[AUTH] 声纹匹配度 98.7% — 身份验证通过 (${currentUser})`,'success');
-      bubble.innerHTML=`✅ <span class="text-[#00ffcc]">声纹验证通过 (${currentUser} · 98.7%)</span>`;
-      await sleep(500);
+      addLog(`声纹匹配度 98.7% — 验证通过（${currentUser}）`,'success');
+      bubble.innerHTML=`✅ <span class="text-[#00ffcc]">声纹验证通过（${currentUser} · 98.7%）</span>`;
+      await sleep(400);
     }
   }
 
-  // --- 极速指令 ---
+  // 快捷指令
   if(text==='断网'){ simulateAttack('net'); return; }
-  if(text==='开灯'){
-    addLog('[ROUTER] 极速指令: light_on (0.015ms)','success');
-    appendChat('ai','💡 已通过 Zigbee 协议开启照明。');
-    return;
-  }
-  if(text==='关灯'){
-    addLog('[ROUTER] 极速指令: light_off (0.014ms)','success');
-    appendChat('ai','🌙 已通过 Zigbee 协议关闭照明。');
-    return;
-  }
+  if(text==='开灯'){ addLog('快捷指令：开灯（0.015ms）','success'); appendChat('ai','💡 已通过 Zigbee 协议开启照明。'); return; }
+  if(text==='关灯'){ addLog('快捷指令：关灯（0.014ms）','success'); appendChat('ai','🌙 已通过 Zigbee 协议关闭照明。'); return; }
 
-  // --- 恢复网络 ---
+  // 恢复网络
   if(text==='恢复网络'){
-    if(sysState.relay==='ONLINE'){ appendChat('ai','当前网络已处于连接状态。'); return; }
+    if(sysState.relay==='ONLINE'){ appendChat('ai','当前网络已处于连接状态，无需恢复。'); return; }
     challengeCode=String(Math.floor(100000+Math.random()*900000));
-    addLog('[AUTH] 触发动态口令质询，防录音回放机制激活','warn');
-    appendChat('ai',`✅ 声纹验证通过。<br>⚠️ 高权限指令，防录音回放机制激活。<br><br>请在 <span class="text-yellow-400">15秒</span> 内朗读动态口令：<br><span class="text-yellow-400 font-bold tracking-widest text-2xl mono">${challengeCode}</span>`);
+    addLog('触发动态口令质询，防录音回放机制已激活','warn');
+    appendChat('ai',`✅ 声纹验证通过。<br><br>⚠️ 高权限操作，启动防录音回放验证。<br><br>请在 <span class="text-yellow-400 font-bold">15秒</span> 内朗读以下动态口令：<br><span class="text-yellow-400 font-bold tracking-widest text-3xl">${challengeCode}</span>`);
     sysState.challenge=true;
-    setTimeout(()=>{
-      if(sysState.challenge){
-        sysState.challenge=false;
-        addLog('[AUTH] 动态口令超时，疑似录音回放','error');
-        appendChat('ai','⏱️ 动态口令超时，指令已自动失效，维持物理隔离。');
-      }
-    },15000);
+    setTimeout(()=>{ if(sysState.challenge){ sysState.challenge=false; addLog('动态口令超时，维持隔离','error'); appendChat('ai','⏱️ 动态口令已超时失效，维持物理隔离状态。'); } },15000);
     return;
   }
 
-  // --- 大模型语义对话 ---
+  // AI 推理
   isAIThinking=true;
   document.getElementById('btn-send').disabled=true;
-  document.getElementById('btn-send').innerText='推理中...';
-  addLog('[ROUTER] 路由未命中，唤醒大模型...','info');
+  document.getElementById('btn-send').innerText='思考中...';
+  addLog('路由至 AI 推理引擎...','info');
   const bubble=createJarvisBubble();
-  bubble.innerHTML='<span class="thinking text-gray-500 mono text-xs">▌ 边缘推理中 (Inferencing)...</span>';
+  bubble.innerHTML='<span class="thinking text-gray-500 text-xs">正在思考...</span>';
   const t0=Date.now();
-  const reply=await callJarvisAI(text);
+  const reply=await callAI(text);
   const ms=Date.now()-t0;
-  addLog(`[JARVIS] 推理完成 (${ms}ms)`,'success');
-  addAuditEvent('SYSTEM','JARVIS_LLM',`问询: "${text.substring(0,20)}..."`,`完成 ${ms}ms`,'text-green-400');
-  typeWriterEffect(bubble,reply);
+  addLog(`AI 推理完成（${ms}ms）`,'success');
+  addAuditEvent('系统','AI 助手',`问询：「${text.substring(0,24)}...」`,`完成 ${ms}ms`,'text-green-400');
+  typeWriter(bubble,reply);
   isAIThinking=false;
   document.getElementById('btn-send').disabled=false;
-  document.getElementById('btn-send').innerText='执行 (Enter)';
+  document.getElementById('btn-send').innerText='发送';
 }
 
 document.getElementById('btn-send').addEventListener('click',()=>processInput(false));
-document.getElementById('cmd-input').addEventListener('keypress',e=>{ if(e.key==='Enter') processInput(false); });
+document.getElementById('cmd-input').addEventListener('keypress',e=>{ if(e.key==='Enter')processInput(false); });
 
-// ========== 大模型 API ==========
-async function callJarvisAI(msg){
+// ========== AI API ==========
+async function callAI(msg){
   const ctx=lastAttackType
-    ? `当前系统刚刚遭受【${
-        lastAttackType==='ssh'?'SSH暴力破解':
-        lastAttackType==='cpu'?'算力满载/恶意挖矿':
-        lastAttackType==='udp'?'UDP Flood流量激增':
-        lastAttackType==='voice'?'录音回放攻击':'用户主动断网'
-      }】攻击，物理气隙已熔断，广域网物理隔离。`
-    : '当前系统运行平稳，无活跃威胁。';
+    ?`当前系统遭受【${lastAttackType==='ssh'?'SSH暴力破解':lastAttackType==='cpu'?'算力满载/恶意挖矿':lastAttackType==='udp'?'UDP Flood流量激增':lastAttackType==='voice'?'录音回放攻击':'用户主动断网'}】攻击，物理气隙已熔断。`
+    :'当前系统运行平稳，无活跃威胁。';
   try{
-    const res=await fetch('/api/chat',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({message:msg, attackContext:ctx, relayStatus:sysState.relay, user:currentUser})
-    });
-    if(!res.ok) throw new Error('api_err');
-    const data=await res.json();
-    return data.reply||'推理完成，但未获得有效回复。';
-  }catch(e){
-    addLog('[API] 云端异常，切换本地兜底','warn');
-    return fallback(msg);
-  }
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,attackContext:ctx,relayStatus:sysState.relay,user:currentUser})});
+    if(!res.ok)throw new Error('err');
+    const data=await res.json(); return data.reply||'推理完成，但未获得有效回复。';
+  }catch(e){ addLog('云端不可用，切换本地知识库','warn'); return fallback(msg); }
 }
 
 function fallback(input){
   const t=input.toLowerCase();
   if(t.includes('处理')||t.includes('建议')||t.includes('溯源')||t.includes('怎么办')){
-    if(lastAttackType==='ssh')   return "针对SSH暴力破解：立即修改默认22端口，禁用密码登录强制RSA密钥，永久封禁来源IP 192.168.1.105。物理气隙已确保攻击者无法进一步渗透。";
-    if(lastAttackType==='cpu')   return "针对算力满载：使用htop定位PID:4821父进程，检查/var/spool/cron恶意任务，隔离可疑容器。排查完成前维持断网状态。";
-    if(lastAttackType==='udp')   return "针对UDP Flood：排查局域网IoT固件版本，路由器层面过滤异常MAC，检查未授权内网穿透服务（frp/ngrok）。";
-    if(lastAttackType==='voice') return "针对录音回放：系统已通过动态口令成功拦截。建议排查物理环境是否存在未授权拾音设备，检查麦克风阵列访问权限。";
-    return "请先触发左侧攻击演示，我将基于实际攻击类型给出针对性建议。";
+    if(lastAttackType==='ssh') return "针对 SSH 暴力破解：建议立即修改默认 22 端口，禁用密码登录并强制使用 RSA 密钥，永久封禁来源 IP 192.168.1.105。物理气隙已确保攻击者无法进一步渗透。";
+    if(lastAttackType==='cpu') return "针对算力满载攻击：建议使用系统监控工具定位 PID:4821 的父进程，检查定时任务中是否存在恶意挖矿脚本，隔离可疑进程。排查完成前请维持断网状态。";
+    if(lastAttackType==='udp') return "针对 UDP Flood：建议排查局域网内 IoT 设备固件版本，在路由器层面过滤异常 MAC 地址，检查是否存在未授权的内网穿透服务。";
+    if(lastAttackType==='voice') return "录音回放攻击已被动态口令机制成功拦截。建议排查物理环境中是否存在未授权录音设备，并检查麦克风访问权限。";
+    return "请先点击左侧攻击场景按钮触发演示，我将基于实际攻击类型给出针对性处置建议。";
   }
-  if(t.includes('你是谁')||t.includes('介绍'))
-    return `我是J.A.R.V.I.S，${currentUser}的边缘可信中控系统，采用双路径异构拓扑与硬件级物理气隙，实现确定性隐私保护。`;
-  if(t.includes('声纹')||t.includes('voiceprint'))
-    return "声纹验证基于Resemblyzer提取d-vector特征，计算余弦相似度。阈值0.85以上判定为主理人，结合动态口令质询实现双因子防重放。";
-  if(t.includes('继电器')||t.includes('气隙')||t.includes('relay'))
-    return "硬件级气隙继电器串联于WAN物理链路，触发时直接断开电气连接，响应时延<5ms，软件层面无法绕过，这是系统安全的最终防线。";
-  if(t.includes('专利')||t.includes('patent'))
-    return "本系统核心创新已申请发明专利，涵盖边缘计算节点的物理安全熔断机制与声纹双因子认证架构。";
-  if(t.includes('密码')||t.includes('pin')||t.includes('账号'))
-    return "账号与PIN码均存储于设备本地（localStorage），不上传任何服务器。PIN码配合声纹双因子，确保只有物理在场的主理人才能操作高权限指令。";
-  return `关于"${input}"，本地知识库处理中。如需深度分析，请确保网络连接以启用云端推理。`;
+  if(t.includes('你是谁')||t.includes('介绍')) return `我是 J.A.R.V.I.S，${currentUser} 的边缘智能安全助手。我运行在本地边缘节点上，通过硬件级物理气隙保护您的隐私与安全。`;
+  if(t.includes('声纹')||t.includes('voiceprint')) return "声纹验证基于 Resemblyzer 模型提取声纹特征向量，计算余弦相似度。相似度超过 0.85 判定为授权用户，并结合动态口令实现双因子防录音回放。";
+  if(t.includes('继电器')||t.includes('气隙')||t.includes('relay')) return "物理气隙继电器串联在广域网物理链路上，触发时直接断开电气连接，响应时延 <5ms，软件层面完全无法绕过，是系统安全的最终防线。";
+  if(t.includes('专利')||t.includes('patent')) return "本系统核心创新已申请发明专利，涵盖边缘计算节点的物理安全熔断机制与声纹双因子认证架构，第一发明人为本系统主理人。";
+  if(t.includes('密码')||t.includes('pin')||t.includes('账号')) return "账号与 PIN 码均仅存储在您的本地设备中，不上传任何服务器。PIN 码配合声纹双因子验证，确保只有物理在场的授权用户才能执行高权限操作。";
+  return `关于「${input}」，我正在本地知识库中检索。如需更深入的分析，请确保网络连接以启用云端推理引擎。`;
 }
 
 // ========== 熔断 UI ==========
 function triggerLockdown(){
   sysState.relay='SEVERED';
-  document.getElementById('relay-box').className='border border-red-500 p-3 text-center rounded-lg bg-red-500/10 transition-all duration-500 blink';
-  document.getElementById('relay-text').className='text-xl font-bold neon-red mono tracking-widest';
-  document.getElementById('relay-text').innerText='SEVERED (熔断)';
-  document.getElementById('sys-status').className='text-red-400';
-  document.getElementById('sys-status').innerText='● LOCKDOWN';
+  document.getElementById('relay-box').className='border border-red-500/60 p-3 text-center rounded-xl bg-red-500/8 transition-all duration-500';
+  document.getElementById('relay-text').className='text-lg font-bold neon-red mono tracking-wider';
+  document.getElementById('relay-text').innerText='● 已断开（熔断）';
+  document.getElementById('sys-status').innerHTML='<span class="status-dot bg-red-400 blink"></span><span class="text-red-400">物理隔离中</span>';
   const tr=document.getElementById('topo-relay');
-  if(tr){tr.innerText='● OPEN';tr.className='text-red-400 mono';}
+  if(tr) tr.innerHTML='<span class="status-dot bg-red-400"></span><span class="text-red-400">已断开</span>';
   const wl=document.getElementById('wan-line');
-  if(wl) wl.setAttribute('stroke','#ff4444');
-  addLog('[CRITICAL] 物理继电器断电！广域网隔离！','error');
+  if(wl) wl.setAttribute('stroke','#ff444488');
+  addLog('物理继电器已断电，广域网隔离！','error');
   document.getElementById('stat-lockdowns').innerText=parseInt(document.getElementById('stat-lockdowns').innerText)+1;
-  addAuditEvent('CRITICAL','AIRGAP_CTRL','触发继电器断电，广域网物理隔离(<5ms)','执行成功','text-green-400');
+  addAuditEvent('严重','气隙控制','触发继电器断电，广域网物理隔离（<5ms）','执行成功','text-green-400');
 }
 
 // ========== 重置弹窗 ==========
-let resetPinValue='';
-function openResetModal(){
-  resetPinValue='';
-  updateResetPinDots();
-  document.getElementById('reset-pin-error').innerText='';
-  document.getElementById('reset-modal').classList.remove('hidden');
-}
-function closeResetModal(){
-  document.getElementById('reset-modal').classList.add('hidden');
-}
-function updateResetPinDots(){
-  const dots=document.querySelectorAll('#reset-pin-dots .pin-dot');
-  dots.forEach((d,i)=>d.classList.toggle('filled',i<resetPinValue.length));
-}
-function resetPinInput(digit){
-  if(resetPinValue.length>=4) return;
-  resetPinValue+=digit; updateResetPinDots();
-  if(resetPinValue.length===4) setTimeout(checkResetPin,200);
-}
-function resetPinDel(){ resetPinValue=resetPinValue.slice(0,-1); updateResetPinDots(); }
-function resetPinClear(){ resetPinValue=''; updateResetPinDots(); }
-function checkResetPin(){
-  if(resetPinValue===currentPin){
-    closeResetModal();
-    doResetSystem();
-  } else {
-    document.getElementById('reset-pin-error').innerText='PIN 错误，请重试';
-    resetPinValue=''; updateResetPinDots();
-    shakeEl('reset-pin-dots');
-  }
+let rpv='';
+function openResetModal(){ rpv=''; updRPD(); document.getElementById('reset-pin-error').innerText=''; document.getElementById('reset-modal').classList.remove('hidden'); }
+function closeResetModal(){ document.getElementById('reset-modal').classList.add('hidden'); }
+function updRPD(){ document.querySelectorAll('#reset-pin-dots .pin-dot').forEach((d,i)=>d.classList.toggle('filled',i<rpv.length)); }
+function resetPinInput(d){ if(rpv.length>=4)return; rpv+=d; updRPD(); if(rpv.length===4)setTimeout(checkRP,200); }
+function resetPinDel(){ rpv=rpv.slice(0,-1); updRPD(); }
+function resetPinClear(){ rpv=''; updRPD(); }
+function checkRP(){
+  if(rpv===currentPin){ closeResetModal(); doResetSystem(); }
+  else{ document.getElementById('reset-pin-error').innerText='PIN 错误，请重试'; rpv=''; updRPD(); shakeEl('reset-pin-dots'); }
 }
 
-// ========== 真正执行重置 ==========
+// ========== 执行重置 ==========
 function doResetSystem(){
-  sysState={relay:'ONLINE',attacking:false,challenge:false};
-  lastAttackType=''; challengeCode='';
-  document.getElementById('relay-box').className='border border-[#00ffcc] p-3 text-center rounded-lg bg-[#00ffcc]/10 transition-all duration-500';
-  document.getElementById('relay-text').className='text-xl font-bold neon mono tracking-widest';
-  document.getElementById('relay-text').innerText='ONLINE';
-  document.getElementById('cpu-bar').className='bar-fill bg-[#00ffcc]';
-  document.getElementById('cpu-bar').style.width='12%';
-  document.getElementById('cpu-text').innerText='12.0%';
-  document.getElementById('cpu-text').className='neon';
-  document.getElementById('net-bar').className='bar-fill bg-[#00ffcc]';
-  document.getElementById('net-bar').style.width='5%';
-  document.getElementById('net-text').innerText='0.02MB/s';
-  document.getElementById('net-text').className='neon';
-  document.getElementById('sys-status').className='text-green-400';
-  document.getElementById('sys-status').innerText='● SYSTEM ONLINE';
+  sysState={relay:'ONLINE',attacking:false,challenge:false}; lastAttackType=''; challengeCode='';
+  document.getElementById('relay-box').className='border border-[#00ffcc]/40 p-3 text-center rounded-xl bg-[#00ffcc]/5 transition-all duration-500';
+  document.getElementById('relay-text').className='text-lg font-bold neon mono tracking-wider';
+  document.getElementById('relay-text').innerText='● 已连接';
+  document.getElementById('sys-status').innerHTML='<span class="status-dot bg-green-400 blink"></span><span class="text-green-400">运行正常</span>';
+  ['cpu','net'].forEach(k=>{
+    document.getElementById(k+'-bar').className='bar-fill bg-[#00ffcc]';
+    document.getElementById(k+'-bar').style.width=k==='cpu'?'12%':'5%';
+    document.getElementById(k+'-text').className='neon font-medium';
+    document.getElementById(k+'-text').innerText=k==='cpu'?'12.0%':'0.02 MB/s';
+  });
   const tr=document.getElementById('topo-relay');
-  if(tr){tr.innerText='● CLOSED';tr.className='text-green-400 mono';}
+  if(tr) tr.innerHTML='<span class="status-dot bg-green-400"></span><span class="text-green-400">已闭合</span>';
   const wl=document.getElementById('wan-line');
-  if(wl) wl.setAttribute('stroke','#00ffcc44');
-  appendChat('ai',`✅ 近点授权通过，系统已重置，广域网继电器重新吸合，安全状态恢复。`);
-  addLog('[SYSTEM] 系统状态已重置','success');
-  addAuditEvent('SYSTEM','AIRGAP_CTRL',`${currentUser} 近点授权重置，继电器重新闭合`,'执行成功','text-green-400');
+  if(wl) wl.setAttribute('stroke','#00ffcc33');
+  appendChat('ai','✅ 身份验证通过，系统已恢复正常状态，广域网连接已重新建立。');
+  addLog('系统状态已重置，恢复正常运行','success');
+  addAuditEvent('系统','气隙控制',`${currentUser} 授权重置，继电器重新闭合`,'执行成功','text-green-400');
 }
 
 // ========== 攻击模拟 ==========
 function simulateAttack(type){
-  if(sysState.relay==='SEVERED'){
-    appendChat('ai','⚠️ 系统已熔断，请先输入 <span class="neon mono">恢复网络</span> 或点击【重置系统状态】。');
-    return;
-  }
-  if(sysState.attacking) return;
+  if(sysState.relay==='SEVERED'){ appendChat('ai','⚠️ 系统当前处于物理隔离状态，请先点击「恢复系统状态」或输入「恢复网络」。'); return; }
+  if(sysState.attacking)return;
   sysState.attacking=true; lastAttackType=type;
 
   if(type==='cpu'){
-    appendChat('user','【评委模拟】执行算力满载攻击...');
-    addLog('[嗅探器] CPU 异常飙升...','warn');
+    appendChat('user','【演示】触发算力满载攻击');
+    addLog('检测到 CPU 异常飙升...','warn');
     let c=12,ti=0;
     const iv=setInterval(()=>{
       c=Math.min(c+18,99.9); ti++;
@@ -1046,88 +857,76 @@ function simulateAttack(type){
       document.getElementById('cpu-bar').style.width=c+'%';
       document.getElementById('cpu-bar').className='bar-fill bg-red-500';
       document.getElementById('cpu-text').className='text-red-400 font-bold';
-      addLog(`[CPU_SNIFFER] 高负载 ${c.toFixed(1)}%，超阈值！`,'warn');
+      addLog(`CPU 负载 ${c.toFixed(1)}%，超过安全阈值！`,'warn');
       if(ti>=5){
         clearInterval(iv);
-        addThreatEvent('算力异常满载','PID:4821','CRITICAL','✓ 物理熔断','text-green-400');
-        addAuditEvent('CRITICAL','CPU_SNIFFER','CPU持续超阈值(99.9%)','物理熔断','text-green-400');
+        addThreatEvent('算力异常满载','PID:4821','CRITICAL','✓ 物理隔离','text-green-400');
         triggerLockdown();
-        setTimeout(()=>{
-          appendChat('ai','<div><span class="text-gray-400">拦截原因：</span>CPU满载超阈值</div><div class="mt-2"><span class="text-gray-400">AI分析：</span>疑似恶意挖矿，PID:4821。可询问处理建议。</div>',true);
-          sysState.attacking=false;
-        },800);
+        setTimeout(()=>{ appendChat('ai','检测到 CPU 持续满载（99.9%），疑似恶意挖矿程序（PID:4821）。<br><br>已自动触发物理气隙熔断，广域网已断开。<br><br>您可以问我：<strong>「如何处理这次攻击？」</strong>',true); sysState.attacking=false; },800);
       }
     },300);
   }
 
   if(type==='ssh'){
-    appendChat('user','【评委模拟】执行 SSH 暴力破解...');
+    appendChat('user','【演示】触发 SSH 暴力破解');
     let count=0;
     const iv=setInterval(()=>{
       count++;
-      addLog(`[SSH_SNIFFER] 失败登录 192.168.1.105，累计 ${count} 次`,'warn');
+      addLog(`SSH 登录失败（192.168.1.105），累计 ${count} 次`,'warn');
       if(count>=5){
         clearInterval(iv);
-        addThreatEvent('SSH 暴力破解','192.168.1.105','CRITICAL','✓ 物理熔断','text-green-400');
-        addAuditEvent('CRITICAL','SSH_SNIFFER','60s内失败登录5次','物理熔断','text-green-400');
+        addThreatEvent('SSH 暴力破解','192.168.1.105','CRITICAL','✓ 物理隔离','text-green-400');
         triggerLockdown();
-        setTimeout(()=>{
-          appendChat('ai','<div><span class="text-gray-400">拦截原因：</span>60s内非法登录5次</div><div class="mt-2"><span class="text-gray-400">AI分析：</span>高频SSH字典攻击，存在提权风险。可询问处理建议。</div>',true);
-          sysState.attacking=false;
-        },800);
+        setTimeout(()=>{ appendChat('ai','检测到来自 192.168.1.105 的 SSH 暴力破解攻击，60 秒内失败登录 5 次。<br><br>已自动触发物理气隙熔断，广域网已断开。<br><br>您可以问我：<strong>「如何处理这次攻击？」</strong>',true); sysState.attacking=false; },800);
       }
     },250);
   }
 
   if(type==='udp'){
-    appendChat('user','【评委模拟】执行 UDP Flood 攻击...');
-    addLog('[嗅探器] 出站流量突增...','warn');
+    appendChat('user','【演示】触发 UDP Flood 攻击');
+    addLog('检测到出站流量异常激增...','warn');
     let nv=0.02,ti=0;
     const iv=setInterval(()=>{
       nv=nv*4+Math.random()*10; ti++;
-      document.getElementById('net-text').innerText=nv.toFixed(1)+'MB/s';
+      document.getElementById('net-text').innerText=nv.toFixed(1)+' MB/s';
       document.getElementById('net-bar').style.width=Math.min((nv/50)*100,100)+'%';
       document.getElementById('net-bar').className='bar-fill bg-red-500';
       document.getElementById('net-text').className='text-red-400 font-bold';
-      addLog(`[NET_SNIFFER] 异常流量 ${nv.toFixed(1)}MB/s，远超基线！`,'warn');
+      addLog(`出站流量 ${nv.toFixed(1)} MB/s，远超正常基线！`,'warn');
       if(ti>=5){
         clearInterval(iv);
         addThreatEvent('异常出站流量','wlan0→外网','HIGH','✓ 流量截断','text-green-400');
-        addAuditEvent('HIGH','NET_SNIFFER','流量超基线620倍','流量截断','text-green-400');
         triggerLockdown();
-        setTimeout(()=>{
-          appendChat('ai','<div><span class="text-gray-400">拦截原因：</span>UDP Flood流量激增</div><div class="mt-2"><span class="text-gray-400">AI分析：</span>疑似DDoS或数据外发窃取。可询问处理建议。</div>',true);
-          sysState.attacking=false;
-        },800);
+        setTimeout(()=>{ appendChat('ai','检测到异常出站流量（超基线 620 倍），疑似 DDoS 攻击或数据外泄。<br><br>已自动触发物理气隙熔断，广域网已断开。<br><br>您可以问我：<strong>「如何处理这次攻击？」</strong>',true); sysState.attacking=false; },800);
       }
     },350);
   }
 
   if(type==='net'){
     appendChat('user','断网');
-    addLog('[ROUTER] 极速指令: net_cut (0.012ms)','success');
-    addThreatEvent('用户指令断网','本地控制台','HIGH','✓ 物理熔断','text-green-400');
-    addAuditEvent('SYSTEM','JARVIS_ROUTER','指令"断网"命中极速路由','执行成功','text-green-400');
+    addLog('快捷指令：断网（0.012ms）','success');
+    addThreatEvent('用户指令断网','本地控制台','HIGH','✓ 物理隔离','text-green-400');
+    addAuditEvent('系统','指令路由','「断网」指令命中快速通道，跳过云端推理','执行成功','text-green-400');
     triggerLockdown();
-    appendChat('ai','✅ 物理熔断已触发，切入纯局域网绝对隐私模式。');
+    appendChat('ai','✅ 物理熔断已触发，系统已切换至纯局域网隐私模式，广域网连接已断开。');
     sysState.attacking=false;
   }
 }
 
 // ========== 遥测波动 ==========
 setInterval(()=>{
-  if(sysState.attacking||sysState.relay==='SEVERED') return;
-  const cpu =(Math.random()*8+8).toFixed(1);
+  if(sysState.attacking||sysState.relay==='SEVERED')return;
+  const cpu=(Math.random()*8+8).toFixed(1);
   const temp=(Math.random()*2+42).toFixed(1);
-  const net =(Math.random()*0.05).toFixed(3);
-  document.getElementById('cpu-text').innerText =cpu+'%';
+  const net=(Math.random()*0.05).toFixed(3);
+  document.getElementById('cpu-text').innerText=cpu+'%';
   document.getElementById('cpu-bar').style.width=cpu+'%';
   document.getElementById('temp-text').innerText=temp+'°C';
   document.getElementById('temp-bar').style.width=(parseFloat(temp)/100*100)+'%';
-  document.getElementById('net-text').innerText =net+'MB/s';
+  document.getElementById('net-text').innerText=net+' MB/s';
   document.getElementById('net-bar').style.width=(parseFloat(net)/0.05*5)+'%';
 },2500);
 
 </script>
 </body>
-</html>       
+</html>
