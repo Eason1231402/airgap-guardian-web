@@ -78,8 +78,8 @@ npx vercel dev
 
 1. 在 Vercel 项目中绑定自定义域名
 2. DNS 解析（腾讯云 DNSPod）：
-   - `@` → A 记录 → `76.76.21.21`
-   - `www` → CNAME → `cname.vercel-dns.com`
+   - `@` → A 记录 → `216.198.79.1`
+   - `www` → CNAME → `7539429ea5802378.vercel-dns-017.com`
 3. Vercel 自动签发 HTTPS 证书
 
 ---
