@@ -47,11 +47,14 @@
     @keyframes wave { 0%,100%{transform:scaleY(.4);opacity:.5;}50%{transform:scaleY(1);opacity:1;} }
     .badge-on { background:#00ffcc14;border:1px solid #00ffcc44;color:#00ffcc; }
     .badge-off { background:#f59e0b14;border:1px solid #f59e0b44;color:#f59e0b; }
+    .badge-guest { background:rgba(107,114,128,0.15);border:1px solid rgba(107,114,128,0.3);color:#9ca3af; }
     .input-field { width:100%;background:#0a1a1a;border:1px solid #00ffcc18;border-radius:12px;padding:11px 16px;color:#e5e7eb;font-size:14px;outline:none;transition:border .2s; }
     .input-field:focus { border-color:#00ffcc66; }
     .input-field::placeholder { color:#374151; }
     .btn-primary { background:#00ffcc;color:#000;font-weight:700;border-radius:12px;padding:12px 0;width:100%;font-size:15px;cursor:pointer;transition:all .2s;letter-spacing:.5px; }
     .btn-primary:hover { background:#fff;transform:translateY(-1px); }
+    .btn-ghost { background:transparent;color:#6b7280;font-size:13px;cursor:pointer;transition:all .2s;padding:8px 0;width:100%;border-radius:10px;border:1px solid rgba(255,255,255,0.08); }
+    .btn-ghost:hover { color:#d1d5db;border-color:rgba(255,255,255,0.2); }
     .step-dot { width:8px;height:8px;border-radius:50%;background:#1f2937;transition:all .3s; }
     .step-dot.active { background:#00ffcc;box-shadow:0 0 8px #00ffcc; }
     .step-dot.done { background:#00ffcc44; }
@@ -66,23 +69,31 @@
     .input-locked-bar .lock-text { flex:1;color:#ff6666;font-size:13px;letter-spacing:1px; }
     .mic-only-btn { background:#00ffcc;border:none;border-radius:8px;padding:8px 16px;color:#000;font-weight:bold;cursor:pointer;font-size:13px;animation:micPulse 1s infinite;white-space:nowrap; }
     @keyframes micPulse { 0%,100%{background:#00ffcc;}50%{background:#00cc66;transform:scale(1.04);} }
-    /* 演示角色按钮 */
     .role-btn-active-owner { background:rgba(0,255,204,0.12);border:1px solid rgba(0,255,204,0.4);color:#00ffcc; }
     .role-btn-active-stranger { background:rgba(255,68,68,0.12);border:1px solid rgba(255,68,68,0.4);color:#ff6666; }
     .role-btn-inactive { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#6b7280; }
+    /* 游客横幅 */
+    .guest-banner { background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px; }
+    /* 登录弹窗关闭按钮 */
+    .overlay-close { position:absolute;top:18px;right:20px;width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#6b7280;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .2s; }
+    .overlay-close:hover { background:rgba(255,255,255,0.12);color:#d1d5db; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-<!-- ========== 初始化遮罩 ========== -->
+<!-- ========== 初始化遮罩（可叉掉） ========== -->
 <div id="init-overlay" class="overlay-layer">
-  <div class="glass rounded-3xl p-8 w-full max-w-md mx-4" style="border-color:rgba(0,255,204,0.2)">
+  <div class="glass rounded-3xl p-8 w-full max-w-md mx-4 relative" style="border-color:rgba(0,255,204,0.2)">
+    <!-- ★ 关闭按钮：仅在登录/注册步骤显示 -->
+    <button id="overlay-close-btn" class="overlay-close" onclick="enterGuestMode()" title="以游客身份进入">✕</button>
+
     <div class="flex justify-center gap-2 mb-7">
       <div class="step-dot active" id="sdot-0"></div>
       <div class="step-dot" id="sdot-1"></div>
       <div class="step-dot" id="sdot-2"></div>
     </div>
-    <!-- STEP 0 -->
+
+    <!-- STEP 0: 登录/注册 -->
     <div id="step-welcome">
       <div class="text-center mb-6">
         <div class="w-14 h-14 rounded-2xl bg-[#00ffcc]/10 border border-[#00ffcc]/30 flex items-center justify-center mx-auto mb-4"><span class="text-2xl">🛡️</span></div>
@@ -95,8 +106,12 @@
           <input id="login-password" class="input-field" type="password" placeholder="密码">
         </div>
         <div id="login-error" class="text-red-400 text-xs mb-3 h-4 text-center"></div>
-        <button class="btn-primary mb-4" onclick="doLogin()">登 录</button>
-        <p class="text-center text-sm text-gray-500">还没有账号？<button onclick="showRegister()" class="text-[#00ffcc] hover:underline ml-1">立即注册</button></p>
+        <button class="btn-primary mb-3" onclick="doLogin()">登 录</button>
+        <p class="text-center text-sm text-gray-500 mb-4">还没有账号？<button onclick="showRegister()" class="text-[#00ffcc] hover:underline ml-1">立即注册</button></p>
+        <div class="relative flex items-center gap-3 mb-3">
+          <div class="flex-1 h-px bg-white/8"></div><span class="text-xs text-gray-600">或</span><div class="flex-1 h-px bg-white/8"></div>
+        </div>
+        <button class="btn-ghost" onclick="enterGuestMode()">👁 以游客身份浏览 · 无需注册</button>
       </div>
       <div id="form-register" class="hidden">
         <div class="space-y-3 mb-4">
@@ -105,11 +120,13 @@
           <input id="reg-password2" class="input-field" type="password" placeholder="确认密码">
         </div>
         <div id="reg-error" class="text-red-400 text-xs mb-3 h-4 text-center"></div>
-        <button class="btn-primary mb-4" onclick="doRegister()">创建账号</button>
-        <p class="text-center text-sm text-gray-500">已有账号？<button onclick="showLogin()" class="text-[#00ffcc] hover:underline ml-1">返回登录</button></p>
+        <button class="btn-primary mb-3" onclick="doRegister()">创建账号</button>
+        <p class="text-center text-sm text-gray-500 mb-4">已有账号？<button onclick="showLogin()" class="text-[#00ffcc] hover:underline ml-1">返回登录</button></p>
+        <button class="btn-ghost" onclick="enterGuestMode()">👁 以游客身份浏览 · 无需注册</button>
       </div>
     </div>
-    <!-- STEP 1: PIN -->
+
+    <!-- STEP 1: PIN（无关闭按钮） -->
     <div id="step-pin-wrap" class="hidden text-center">
       <div class="w-14 h-14 rounded-2xl bg-[#00ffcc]/10 border border-[#00ffcc]/30 flex items-center justify-center mx-auto mb-4"><span class="text-2xl">🔐</span></div>
       <h2 class="text-xl font-bold text-white mb-1" id="pin-title">设定安全 PIN 码</h2>
@@ -125,7 +142,8 @@
         <button class="pin-key text-gray-500 text-sm" onclick="mainPinClear()">清除</button><button class="pin-key" onclick="mainPinInput('0')">0</button><button class="pin-key text-gray-500 text-xl" onclick="mainPinDel()">⌫</button>
       </div>
     </div>
-    <!-- STEP 2: 声纹 -->
+
+    <!-- STEP 2: 声纹（无关闭按钮） -->
     <div id="step-voice" class="hidden text-center">
       <div class="w-14 h-14 rounded-2xl bg-[#00ffcc]/10 border border-[#00ffcc]/30 flex items-center justify-center mx-auto mb-4"><span class="text-2xl">🎙️</span></div>
       <h2 class="text-xl font-bold text-white mb-1" id="voice-step-title">声纹身份绑定</h2>
@@ -174,6 +192,8 @@
     <button class="tab-btn" onclick="switchTab('audit',this)">操作日志</button>
   </nav>
   <div class="flex items-center gap-3 text-sm">
+    <!-- ★ 游客模式下显示登录按钮 -->
+    <button id="header-login-btn" class="hidden px-3 py-1.5 rounded-lg border border-[#00ffcc]/30 text-[#00ffcc] text-xs hover:bg-[#00ffcc]/10 transition-all" onclick="showLoginOverlay()">🔐 登录 / 注册</button>
     <span id="master-badge" class="px-3 py-1 rounded-full text-xs badge-off">⏳ 未登录</span>
     <span id="clock" class="text-gray-400 mono text-xs">00:00:00</span>
     <span id="sys-status" class="flex items-center gap-1.5 text-green-400 text-xs"><span class="status-dot bg-green-400 blink"></span>运行正常</span>
@@ -185,7 +205,6 @@
   <div class="grid grid-cols-12 gap-5">
     <!-- 左栏 -->
     <div class="col-span-3 flex flex-col gap-4">
-      <!-- 攻击场景 -->
       <div class="card p-5">
         <div class="flex items-center gap-2 mb-1"><span class="text-base">⚡</span><h2 class="text-sm font-semibold text-white">攻击场景演示</h2></div>
         <p class="text-xs text-gray-500 mb-4 leading-relaxed">点击模拟真实攻击场景，体验系统自动防御与物理隔离的完整流程</p>
@@ -206,7 +225,6 @@
         <button onclick="openResetModal()" class="w-full mt-3 py-2.5 rounded-xl border border-green-500/30 bg-green-500/5 text-green-400 text-sm font-medium hover:bg-green-500/10 transition-all">🔄 恢复系统状态</button>
       </div>
 
-      <!-- 设备状态 -->
       <div class="card p-5">
         <h2 class="text-sm font-semibold text-white mb-4">设备实时状态</h2>
         <div class="space-y-4">
@@ -229,22 +247,15 @@
             <div id="relay-text" class="text-lg font-bold neon mono tracking-wider">● 已连接</div>
           </div>
         </div>
-
-        <!-- ★ 演示模式设置：直接外放，不再折叠 ★ -->
+        <!-- 演示声纹角色 -->
         <div class="mt-4 pt-4 border-t border-white/5">
           <div class="flex items-center gap-2 mb-3">
             <span class="text-xs text-gray-400 font-medium">演示声纹角色</span>
             <span class="text-xs text-gray-600">（控制语音指令的身份判定）</span>
           </div>
           <div class="flex gap-2">
-            <button onclick="setVoiceRole('owner')" id="role-owner"
-              class="flex-1 py-2 text-xs rounded-xl font-medium transition-all role-btn-active-owner">
-              🟢 主理人模式
-            </button>
-            <button onclick="setVoiceRole('stranger')" id="role-stranger"
-              class="flex-1 py-2 text-xs rounded-xl font-medium transition-all role-btn-inactive">
-              🔴 陌生人模式
-            </button>
+            <button onclick="setVoiceRole('owner')" id="role-owner" class="flex-1 py-2 text-xs rounded-xl font-medium transition-all role-btn-active-owner">🟢 主理人模式</button>
+            <button onclick="setVoiceRole('stranger')" id="role-stranger" class="flex-1 py-2 text-xs rounded-xl font-medium transition-all role-btn-inactive">🔴 陌生人模式</button>
           </div>
           <div id="role-status-hint" class="text-xs text-[#00ffcc]/70 mt-2 text-center">当前：主理人 · 声纹验证将通过</div>
         </div>
@@ -260,6 +271,12 @@
         </div>
         <div id="chat-output" class="flex-1 overflow-y-auto p-5 space-y-4 bg-black/20"></div>
         <div class="border-t border-white/5 shrink-0 p-4">
+          <!-- 游客横幅 -->
+          <div id="guest-banner" class="hidden guest-banner mb-3">
+            <span class="text-yellow-400 text-sm">👁</span>
+            <span class="text-xs text-yellow-400/80 flex-1">游客模式 · 声纹验证与高权限指令不可用</span>
+            <button onclick="showLoginOverlay()" class="text-xs text-[#00ffcc] hover:underline whitespace-nowrap">登录解锁 →</button>
+          </div>
           <div class="text-xs text-gray-600 mb-2 flex gap-4 flex-wrap" id="quick-cmd-bar">
             <span>快捷指令：</span>
             <button onclick="quickCmd('断网')" class="text-blue-400 hover:text-blue-300 quick-btn">断网</button>
@@ -268,7 +285,6 @@
             <button onclick="quickCmd('关灯')" class="text-blue-400 hover:text-blue-300 quick-btn">关灯</button>
             <button onclick="quickCmd('如何处理这次攻击？')" class="text-purple-400 hover:text-purple-300 quick-btn">如何处理？</button>
           </div>
-          <!-- 正常输入框 -->
           <div id="input-normal" class="flex gap-2 items-center bg-white/5 border border-white/8 p-2 rounded-xl focus-within:border-[#00ffcc]/40 transition-colors">
             <input type="text" id="cmd-input" class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2 placeholder-gray-600" placeholder="输入指令或问题..." autocomplete="off">
             <button id="btn-mic" class="mic-btn p-2 text-gray-500 hover:text-[#00ffcc] rounded-lg hover:bg-white/5 transition-colors" title="语音输入">
@@ -276,7 +292,6 @@
             </button>
             <button id="btn-send" class="px-4 py-2 bg-[#00ffcc] text-black font-bold rounded-lg hover:bg-white transition-colors text-sm">发送</button>
           </div>
-          <!-- 锁定态输入框 -->
           <div id="input-locked" class="hidden">
             <div class="input-locked-bar">
               <span class="text-lg">🔒</span>
@@ -402,39 +417,74 @@
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   function switchTab(n,b){ document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active')); document.getElementById('tab-'+n).classList.add('active'); b.classList.add('active'); }
 
-  // quickCmd 对高权限指令也走语音路径拦截
-  function quickCmd(t){
-    const highPriv = ['恢复网络','断网'];
-    if(highPriv.includes(t)){
-      appendChat('ai',`🔒 <span class="text-red-400 font-bold">「${t}」为高权限指令</span><br><span class="text-gray-400 text-xs">请点击 🎙️ 麦克风按钮以语音方式发出，系统将进行声纹验证。</span>`);
-      return;
-    }
-    document.getElementById('cmd-input').value=t;
-    processInput(false);
-  }
-
   const SK_USERS='jarvis_users', SK_CUR='jarvis_current';
   function getUsers(){ try{return JSON.parse(localStorage.getItem(SK_USERS)||'{}')}catch(e){return{}} }
   function saveUsers(u){ localStorage.setItem(SK_USERS,JSON.stringify(u)); }
-  let currentUser='', currentPin='', isReturningUser=false;
+  let currentUser='', currentPin='', isReturningUser=false, isGuest=false;
+
+  // ========== 游客模式 ==========
+  function enterGuestMode(){
+    isGuest=true; currentUser=''; currentPin='';
+    document.getElementById('init-overlay').style.transition='opacity 0.5s';
+    document.getElementById('init-overlay').style.opacity='0';
+    setTimeout(()=>{ document.getElementById('init-overlay').style.display='none'; },500);
+    document.getElementById('master-badge').className='px-3 py-1 rounded-full text-xs badge-guest';
+    document.getElementById('master-badge').innerText='👁 游客模式';
+    document.getElementById('header-login-btn').classList.remove('hidden');
+    document.getElementById('guest-banner').classList.remove('hidden');
+    addLog('游客模式进入，声纹与高权限功能不可用','warn');
+    // 游客引导词
+    appendChat('ai',`👋 欢迎体验 <strong class="text-white">J.A.R.V.I.S 边缘智能安全系统</strong>。<br><br>当前以<span class="text-yellow-400">游客身份</span>浏览，您可以：<br>• ⚡ 点击左侧攻击场景，观察系统自动熔断<br>• 💬 与 AI 助手对话，了解系统架构<br>• 🌐 查看网络拓扑与威胁日志<br><br>如需体验<span class="neon">声纹验证</span>与<span class="neon">高权限指令</span>（恢复网络 / 断网），请点击右上角<strong class="text-white">「登录 / 注册」</strong>，绑定您自己的声纹身份。`);
+  }
+
+  // ========== 重新显示登录弹窗 ==========
+  function showLoginOverlay(){
+    isGuest=false;
+    document.getElementById('init-overlay').style.display='flex';
+    document.getElementById('init-overlay').style.opacity='1';
+    document.getElementById('overlay-close-btn').style.display='flex';
+    showLogin();
+  }
 
   function setStep(n){ [0,1,2].forEach(i=>{ const d=document.getElementById('sdot-'+i); d.className='step-dot'+(i<n?' done':i===n?' active':''); }); }
 
   window.addEventListener('DOMContentLoaded',()=>{
+    // ★ localStorage残留检测：有用户记录但数据不完整时，不卡死，给出选择
     const lu=localStorage.getItem(SK_CUR), users=getUsers();
-    if(lu&&users[lu]){ currentUser=lu; currentPin=users[lu].pin||''; isReturningUser=!!(users[lu].voiceEnrolled); showStepPin(currentPin?'verify':'set'); }
-    else showLogin();
+    if(lu&&users[lu]){
+      currentUser=lu; currentPin=users[lu].pin||''; isReturningUser=!!(users[lu].voiceEnrolled);
+      // 数据完整：正常走登录流程
+      showStepPin(currentPin?'verify':'set');
+    } else if(lu&&!users[lu]){
+      // 残留了 current 但 users 里没有对应数据（清空过localStorage）
+      localStorage.removeItem(SK_CUR);
+      showLogin();
+    } else {
+      showLogin();
+    }
+    // PIN/声纹步骤时隐藏关闭按钮
   });
 
-  function showLogin(){ document.getElementById('step-welcome').classList.remove('hidden'); document.getElementById('step-pin-wrap').classList.add('hidden'); document.getElementById('step-voice').classList.add('hidden'); document.getElementById('form-login').classList.remove('hidden'); document.getElementById('form-register').classList.add('hidden'); setStep(0); }
-  function showRegister(){ document.getElementById('form-login').classList.add('hidden'); document.getElementById('form-register').classList.remove('hidden'); }
+  function showLogin(){
+    document.getElementById('step-welcome').classList.remove('hidden');
+    document.getElementById('step-pin-wrap').classList.add('hidden');
+    document.getElementById('step-voice').classList.add('hidden');
+    document.getElementById('form-login').classList.remove('hidden');
+    document.getElementById('form-register').classList.add('hidden');
+    document.getElementById('overlay-close-btn').style.display='flex';
+    setStep(0);
+  }
+  function showRegister(){
+    document.getElementById('form-login').classList.add('hidden');
+    document.getElementById('form-register').classList.remove('hidden');
+  }
 
   function doLogin(){
     const u=document.getElementById('login-username').value.trim(), p=document.getElementById('login-password').value, users=getUsers();
     if(!u||!p){document.getElementById('login-error').innerText='请填写用户名和密码';return;}
     if(!users[u]){document.getElementById('login-error').innerText='用户不存在';return;}
     if(users[u].password!==p){document.getElementById('login-error').innerText='密码错误';return;}
-    currentUser=u; currentPin=users[u].pin||''; isReturningUser=!!(users[u].voiceEnrolled);
+    currentUser=u; currentPin=users[u].pin||''; isReturningUser=!!(users[u].voiceEnrolled); isGuest=false;
     localStorage.setItem(SK_CUR,u); document.getElementById('login-error').innerText='';
     showStepPin(currentPin?'verify':'set');
   }
@@ -443,49 +493,53 @@
     const u=document.getElementById('reg-username').value.trim(), p=document.getElementById('reg-password').value, p2=document.getElementById('reg-password2').value;
     if(!u||u.length<2||u.length>16){document.getElementById('reg-error').innerText='用户名需 2-16 位';return;}
     if(!p||p.length<4){document.getElementById('reg-error').innerText='密码至少 4 位';return;}
-    if(p!==p2){document.getElementById('reg-error').innerText='两次密码不一致';return;}
-    const users=getUsers(); if(users[u]){document.getElementById('reg-error').innerText='用户名已存在';return;}
-    users[u]={password:p,pin:'',voiceEnrolled:false}; saveUsers(users);
-    currentUser=u; currentPin=''; isReturningUser=false;
-    localStorage.setItem(SK_CUR,u); document.getElementById('reg-error').innerText='';
-    showStepPin('set');
-  }
+  if(p!==p2){document.getElementById('reg-error').innerText='两次密码不一致';return;}
+  const users=getUsers(); if(users[u]){document.getElementById('reg-error').innerText='用户名已存在';return;}
+  users[u]={password:p,pin:'',voiceEnrolled:false}; saveUsers(users);
+  currentUser=u; currentPin=''; isReturningUser=false; isGuest=false;
+  localStorage.setItem(SK_CUR,u); document.getElementById('reg-error').innerText='';
+  showStepPin('set');
+}
 
-  let mpv='',mpf='',mpm='set';
-  function showStepPin(mode){
-    mpm=mode; mpv=''; mpf='';
-    document.getElementById('step-welcome').classList.add('hidden');
-    document.getElementById('step-pin-wrap').classList.remove('hidden');
-    document.getElementById('step-voice').classList.add('hidden');
-    if(mode==='set'){ document.getElementById('pin-title').innerText='设定安全 PIN 码'; document.getElementById('pin-subtitle').innerText='用于高权限操作的二次验证'; document.getElementById('pin-hint-main').innerText='请输入 4 位 PIN 码'; }
-    else { document.getElementById('pin-title').innerText='身份验证'; document.getElementById('pin-subtitle').innerText=`欢迎回来，${currentUser}`; document.getElementById('pin-hint-main').innerText='请输入您的 PIN 码'; }
-    document.getElementById('pin-hint-main').className='text-[#00ffcc]/60 text-xs mb-4 h-4';
-    updMPD(); setStep(1);
+// ========== PIN 步骤 ==========
+let mpv='',mpf='',mpm='set';
+function showStepPin(mode){
+  mpm=mode; mpv=''; mpf='';
+  document.getElementById('step-welcome').classList.add('hidden');
+  document.getElementById('step-pin-wrap').classList.remove('hidden');
+  document.getElementById('step-voice').classList.add('hidden');
+  // PIN/声纹步骤隐藏关闭按钮，防止跳过
+  document.getElementById('overlay-close-btn').style.display='none';
+  if(mode==='set'){ document.getElementById('pin-title').innerText='设定安全 PIN 码'; document.getElementById('pin-subtitle').innerText='用于高权限操作的二次验证'; document.getElementById('pin-hint-main').innerText='请输入 4 位 PIN 码'; }
+  else { document.getElementById('pin-title').innerText='身份验证'; document.getElementById('pin-subtitle').innerText=`欢迎回来，${currentUser}`; document.getElementById('pin-hint-main').innerText='请输入您的 PIN 码'; }
+  document.getElementById('pin-hint-main').className='text-[#00ffcc]/60 text-xs mb-4 h-4';
+  updMPD(); setStep(1);
+}
+function updMPD(){ document.querySelectorAll('#pin-dots-main .pin-dot').forEach((d,i)=>d.classList.toggle('filled',i<mpv.length)); }
+function mainPinInput(d){ if(mpv.length>=4)return; mpv+=d; updMPD(); if(mpv.length===4)setTimeout(handleMP,200); }
+function mainPinDel(){ mpv=mpv.slice(0,-1); updMPD(); }
+function mainPinClear(){ mpv=''; updMPD(); }
+function handleMP(){
+  if(mpm==='set'){
+    if(!mpf){ mpf=mpv; mpv=''; updMPD(); document.getElementById('pin-hint-main').innerText='请再次输入确认'; document.getElementById('pin-hint-main').className='text-yellow-400 text-xs mb-4 h-4'; }
+    else if(mpv===mpf){ const u=getUsers(); u[currentUser].pin=mpv; saveUsers(u); currentPin=mpv; addLog('PIN 码设定成功','success'); addAuditEvent('系统','PIN 设置',`用户 ${currentUser} 完成 PIN 设定`,'成功','text-green-400'); goVoice(); }
+    else { mpf=''; mpv=''; updMPD(); document.getElementById('pin-hint-main').innerText='两次输入不一致，请重新设定'; document.getElementById('pin-hint-main').className='text-red-400 text-xs mb-4 h-4'; shakeEl('pin-dots-main'); }
+  } else {
+    if(mpv===currentPin){ addLog('PIN 验证通过','success'); addAuditEvent('系统','PIN 验证',`用户 ${currentUser} 验证通过`,'成功','text-green-400'); goVoice(); }
+    else { mpv=''; updMPD(); document.getElementById('pin-hint-main').innerText='PIN 错误，请重试'; document.getElementById('pin-hint-main').className='text-red-400 text-xs mb-4 h-4'; shakeEl('pin-dots-main'); }
   }
-  function updMPD(){ document.querySelectorAll('#pin-dots-main .pin-dot').forEach((d,i)=>d.classList.toggle('filled',i<mpv.length)); }
-  function mainPinInput(d){ if(mpv.length>=4)return; mpv+=d; updMPD(); if(mpv.length===4)setTimeout(handleMP,200); }
-  function mainPinDel(){ mpv=mpv.slice(0,-1); updMPD(); }
-  function mainPinClear(){ mpv=''; updMPD(); }
-  function handleMP(){
-    if(mpm==='set'){
-      if(!mpf){ mpf=mpv; mpv=''; updMPD(); document.getElementById('pin-hint-main').innerText='请再次输入确认'; document.getElementById('pin-hint-main').className='text-yellow-400 text-xs mb-4 h-4'; }
-      else if(mpv===mpf){ const u=getUsers(); u[currentUser].pin=mpv; saveUsers(u); currentPin=mpv; addLog('PIN 码设定成功','success'); addAuditEvent('系统','PIN 设置',`用户 ${currentUser} 完成 PIN 设定`,'成功','text-green-400'); goVoice(); }
-      else { mpf=''; mpv=''; updMPD(); document.getElementById('pin-hint-main').innerText='两次输入不一致，请重新设定'; document.getElementById('pin-hint-main').className='text-red-400 text-xs mb-4 h-4'; shakeEl('pin-dots-main'); }
-    } else {
-      if(mpv===currentPin){ addLog('PIN 验证通过','success'); addAuditEvent('系统','PIN 验证',`用户 ${currentUser} 验证通过`,'成功','text-green-400'); goVoice(); }
-      else { mpv=''; updMPD(); document.getElementById('pin-hint-main').innerText='PIN 错误，请重试'; document.getElementById('pin-hint-main').className='text-red-400 text-xs mb-4 h-4'; shakeEl('pin-dots-main'); }
-    }
-  }
+}
 
-  function goVoice(){
-    document.getElementById('step-pin-wrap').classList.add('hidden');
-    document.getElementById('step-voice').classList.remove('hidden');
-    document.getElementById('enroll-log').innerHTML='';
-    if(isReturningUser){
-      document.getElementById('voice-step-title').innerText='声纹身份验证';
-      document.getElementById('voice-step-subtitle').innerText='请朗读下方文字以验证您的身份';
-      document.getElementById('voice-enroll-text').innerText=`"J.A.R.V.I.S 边缘节点，主理人身份确认，授权码 ${currentUser}-Zero-One。"`;
-      document.getElementById('btn-enroll-start').innerHTML='🎙️ 开始声纹验证';
+// ========== 声纹步骤 ==========
+function goVoice(){
+  document.getElementById('step-pin-wrap').classList.add('hidden');
+  document.getElementById('step-voice').classList.remove('hidden');
+  document.getElementById('enroll-log').innerHTML='';
+  if(isReturningUser){
+    document.getElementById('voice-step-title').innerText='声纹身份验证';
+    document.getElementById('voice-step-subtitle').innerText='请朗读下方文字以验证您的身份';
+    document.getElementById('voice-enroll-text').innerText=`"J.A.R.V.I.S 边缘节点，主理人身份确认，授权码 ${currentUser}-Zero-One。"`;
+    document.getElementById('btn-enroll-start').innerHTML='🎙️ 开始声纹验证';
   } else {
     document.getElementById('voice-step-title').innerText='声纹身份绑定';
     document.getElementById('voice-step-subtitle').innerText='朗读下方文字，系统将记录您的声纹特征';
@@ -528,13 +582,8 @@ async function startVoiceStep(){
     for(const s of steps){ await sleep(800); const p=document.createElement('p'); p.className=s.cls+' text-xs'; p.innerText=s.msg; logDiv.appendChild(p); addLog(s.msg.replace(/[📊🔍✅🔓]/g,'').trim(),'success'); }
     await sleep(400); wd.remove();
     addAuditEvent('系统','声纹验证',`${currentUser} 声纹身份验证通过（${realMic?'真实音频':'模拟'}，98.7%）`,'成功','text-green-400');
-    document.getElementById('master-badge').className='px-3 py-1 rounded-full text-xs badge-on';
-    document.getElementById('master-badge').innerText=`✓ ${currentUser}`;
-    await sleep(600);
-    document.getElementById('init-overlay').style.transition='opacity 0.6s';
-    document.getElementById('init-overlay').style.opacity='0';
-    await sleep(600); document.getElementById('init-overlay').style.display='none';
-    appendChat('ai',`✅ 欢迎回来，<strong class="text-white">${currentUser}</strong>！声纹验证通过，身份确认。<br><br>当前安全策略已激活：<br>• 🔐 高权限操作需 PIN 验证<br>• 🎙️ 恢复网络需声纹 + 动态口令双重确认<br>• ⚡ 开灯 / 关灯等指令可直接执行<br><br>系统就绪，请开始操作。`);
+    enterMainUI(currentUser);
+    appendChat('ai',`✅ 欢迎回来，<strong class="text-white">${currentUser}</strong>！声纹验证通过，身份确认。<br><br>当前安全策略已激活：<br>• 🔐 高权限操作需 PIN 验证<br>• 🎙️ 恢复网络需声纹 + 动态口令双重确认<br>• ⚡ 开灯 / 关灯等指令可直接执行<br><br>建议体验顺序：<br>① 点击左侧「SSH 暴力破解」→ 观察自动熔断<br>② 🎙️ 说「恢复网络」→ 体验声纹验证流程<br>③ 切换「陌生人模式」再次尝试 → 观察拦截<br>④ 问我「如何处理这次攻击？」→ AI 分析`);
   } else {
     const steps=[
       {msg:'📊 提取声纹特征向量...',cls:'text-gray-400'},
@@ -546,14 +595,20 @@ async function startVoiceStep(){
     await sleep(500); wd.remove();
     const users=getUsers(); users[currentUser].voiceEnrolled=true; saveUsers(users); isReturningUser=true;
     addAuditEvent('系统','声纹录入',`${currentUser} 声纹绑定完成（${realMic?'真实音频':'模拟'}）`,'成功','text-green-400');
-    document.getElementById('master-badge').className='px-3 py-1 rounded-full text-xs badge-on';
-    document.getElementById('master-badge').innerText=`✓ ${currentUser}`;
-    await sleep(700);
-    document.getElementById('init-overlay').style.transition='opacity 0.6s';
-    document.getElementById('init-overlay').style.opacity='0';
-    await sleep(600); document.getElementById('init-overlay').style.display='none';
-    appendChat('ai',`✅ 欢迎，<strong class="text-white">${currentUser}</strong>！身份绑定完成。<br><br>当前安全策略已激活：<br>• 🔐 高权限操作需 PIN 验证<br>• 🎙️ 恢复网络需声纹 + 动态口令双重确认<br>• ⚡ 开灯 / 关灯等指令可直接执行<br><br>系统就绪，请开始操作。`);
+    enterMainUI(currentUser);
+    appendChat('ai',`✅ 欢迎，<strong class="text-white">${currentUser}</strong>！身份绑定完成。<br><br>当前安全策略已激活：<br>• 🔐 高权限操作需 PIN 验证<br>• 🎙️ 恢复网络需声纹 + 动态口令双重确认<br>• ⚡ 开灯 / 关灯等指令可直接执行<br><br>建议体验顺序：<br>① 点击左侧「SSH 暴力破解」→ 观察自动熔断<br>② 🎙️ 说「恢复网络」→ 体验声纹验证流程<br>③ 切换「陌生人模式」再次尝试 → 观察拦截<br>④ 问我「如何处理这次攻击？」→ AI 分析`);
   }
+}
+
+// ========== 进入主界面（统一入口） ==========
+function enterMainUI(username){
+  document.getElementById('init-overlay').style.transition='opacity 0.6s';
+  document.getElementById('init-overlay').style.opacity='0';
+  setTimeout(()=>{ document.getElementById('init-overlay').style.display='none'; },600);
+  document.getElementById('master-badge').className='px-3 py-1 rounded-full text-xs badge-on';
+  document.getElementById('master-badge').innerText=`✓ ${username}`;
+  document.getElementById('header-login-btn').classList.add('hidden');
+  document.getElementById('guest-banner').classList.add('hidden');
 }
 
 // ========== 输入框锁定 / 解锁 ==========
@@ -579,8 +634,6 @@ function triggerLockedMic(){
 }
 
 // ========== 演示声纹角色切换 ==========
-// ★ 核心修复：voiceRole 同时控制声纹验证 AND 口令阶段
-// stranger 模式下：声纹验证直接失败，不进入口令阶段
 let voiceRole='owner';
 function setVoiceRole(role){
   voiceRole=role;
@@ -639,9 +692,9 @@ function appendChat(role,content,isAlert=false){
   const wrap=document.createElement('div');
   const t=new Date().toTimeString().split(' ')[0];
   if(role==='user'){
-    const ini=currentUser?currentUser.substring(0,2).toUpperCase():'U';
+    const ini=currentUser?currentUser.substring(0,2).toUpperCase():'G';
     wrap.className='flex gap-3 flex-row-reverse';
-    wrap.innerHTML=`<div class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-white text-xs font-bold">${ini}</div><div class="flex-1 text-right"><div class="text-xs text-gray-500 mb-1.5">${currentUser||'用户'} · ${t}</div><div class="inline-block chat-bubble-u text-sm text-gray-200">${content}</div></div>`;
+    wrap.innerHTML=`<div class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-white text-xs font-bold">${ini}</div><div class="flex-1 text-right"><div class="text-xs text-gray-500 mb-1.5">${currentUser||'游客'} · ${t}</div><div class="inline-block chat-bubble-u text-sm text-gray-200">${content}</div></div>`;
   } else {
     const body=isAlert
       ?`<div class="bg-red-500/8 border border-red-500/25 rounded-xl p-4 mt-1"><div class="text-red-400 font-semibold text-sm mb-2">⚠ 安全威胁报告</div><div class="grid grid-cols-2 gap-3 mb-3 text-xs"><div><div class="text-gray-500">威胁等级</div><div class="text-red-400 font-bold">严重</div></div><div><div class="text-gray-500">隔离状态</div><div class="neon font-bold">已物理隔离</div></div></div><div class="text-sm text-gray-300 leading-relaxed">${content}</div><div class="mt-3 pt-2 border-t border-red-500/15 text-xs text-gray-500">点击 🎙️ 麦克风按钮语音说 <span class="neon">「恢复网络」</span> 解除隔离</div></div>`
@@ -670,10 +723,22 @@ function typeWriter(el,text){
 
 // ========== 系统状态 ==========
 let sysState={relay:'ONLINE',attacking:false,challenge:false};
-let lastAttackType='',isAIThinking=false,challengeCode='';
-// ★ 核心修复：记录发起恢复网络时的声纹角色快照
-// 防止：主理人声纹通过后切换陌生人再说口令
-let voiceRoleAtChallenge='';
+let lastAttackType='',isAIThinking=false,challengeCode='',voiceRoleAtChallenge='';
+
+// ========== quickCmd ==========
+function quickCmd(t){
+  const highPriv=['恢复网络','断网'];
+  if(highPriv.includes(t)){
+    if(isGuest){
+      appendChat('ai',`🔒 <span class="text-yellow-400 font-bold">「${t}」需要身份验证</span><br><span class="text-gray-400 text-xs">游客模式不支持高权限指令，请先<button onclick="showLoginOverlay()" class="text-[#00ffcc] hover:underline">登录 / 注册</button>绑定声纹身份。</span>`);
+      return;
+    }
+    appendChat('ai',`🔒 <span class="text-red-400 font-bold">「${t}」为高权限指令</span><br><span class="text-gray-400 text-xs">请点击 🎙️ 麦克风按钮以语音方式发出，系统将进行声纹验证。</span>`);
+    return;
+  }
+  document.getElementById('cmd-input').value=t;
+  processInput(false);
+}
 
 // ========== 语音识别 ==========
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -698,6 +763,7 @@ if(SR){
   recognition.onerror=e=>addLog('语音识别失败: '+e.error,'error');
 }
 document.getElementById('btn-mic').addEventListener('click',()=>{
+  if(isGuest){ appendChat('ai','🔒 游客模式下语音指令不可用，请先<button onclick="showLoginOverlay()" class="text-[#00ffcc] hover:underline ml-1">登录 / 注册</button>。'); return; }
   if(recognition) recognition.start();
   else alert('请使用 Chrome 或 Edge 浏览器以启用语音功能');
 });
@@ -708,8 +774,15 @@ async function processInput(isVoice=false){
   const inp=document.getElementById('cmd-input'),text=inp.value.trim();
   if(!text)return;
 
-  // ★ 拦截1：键盘输入高权限指令
+  // 游客模式：高权限指令拦截
   const highPrivCmds=['恢复网络','断网'];
+  if(isGuest&&highPrivCmds.includes(text)){
+    inp.value='';
+    appendChat('ai',`🔒 <span class="text-yellow-400 font-bold">游客模式不支持「${text}」</span><br><span class="text-gray-400 text-xs">请先<button onclick="showLoginOverlay()" class="text-[#00ffcc] hover:underline ml-1">登录 / 注册</button>绑定声纹身份后使用。</span>`);
+    return;
+  }
+
+  // 键盘输入高权限指令拦截
   if(!isVoice&&highPrivCmds.includes(text)){
     inp.value='';
     appendChat('ai',`🔒 <span class="text-red-400 font-bold">高权限指令「${text}」已拦截</span><br><span class="text-gray-400 text-xs">此指令需声纹验证，请点击 🎙️ 麦克风按钮以语音方式发出。</span>`);
@@ -721,17 +794,14 @@ async function processInput(isVoice=false){
   inp.value='';
   appendChat('user',isVoice?`🎙️ ${text}`:text);
 
-  // ★ 拦截2：动态口令质询阶段
+  // 动态口令质询阶段
   if(sysState.challenge){
     if(!isVoice){
       appendChat('ai','🔒 <span class="text-red-400 font-bold">动态口令必须通过语音朗读</span><br><span class="text-gray-400 text-xs">键盘输入已被禁用，请点击「🎙️ 语音验证」按钮朗读口令。</span>');
       return;
     }
-    // ★ 核心修复：口令阶段再次检查声纹角色
-    // 必须与发起挑战时的角色一致（均为 owner）才允许验证
     if(voiceRole!=='owner'){
-      sysState.challenge=false;
-      unlockInput();
+      sysState.challenge=false; unlockInput();
       addLog('口令阶段声纹角色不匹配，疑似录音回放攻击','error');
       addThreatEvent('录音回放攻击','本地音频','HIGH','✗ 已拦截','text-red-400');
       addAuditEvent('HIGH','身份验证','口令阶段声纹角色切换为陌生人，疑似录音回放','拦截成功','text-green-400');
@@ -755,19 +825,17 @@ async function processInput(isVoice=false){
     return;
   }
 
-  // ★ 声纹鉴权（仅语音路径）
+  // 声纹鉴权（仅语音路径）
   if(isVoice){
     addLog('声学模型提取声纹特征中...','info');
     const bubble=createJarvisBubble();
     bubble.innerHTML='<span class="thinking text-gray-500 text-xs">正在验证声纹身份...</span>';
     await sleep(1200);
-    // ★ 核心修复：陌生人模式下，声纹验证失败，立即终止，不进入任何后续流程
     if(voiceRole==='stranger'){
       addLog('声纹匹配度 11% — 拒绝访问','error');
       bubble.innerHTML='🚫 <span class="text-red-400 font-bold">声纹验证失败</span><br><span class="text-gray-400 text-xs">匹配度仅 11%，非授权用户，指令已拦截，流程终止。</span>';
       addThreatEvent('非授权声纹指令','麦克风','HIGH','✗ 已拦截','text-red-400');
       addAuditEvent('HIGH','声纹验证','声纹不匹配(11%)，拒绝执行，流程终止','拦截成功','text-green-400');
-      // 确保不进入后续任何指令处理
       return;
     }
     addLog(`声纹匹配度 98.7% — 验证通过（${currentUser}）`,'success');
@@ -780,10 +848,9 @@ async function processInput(isVoice=false){
   if(text==='关灯'){ addLog('快捷指令：关灯（0.014ms）','success'); appendChat('ai','🌙 已通过 Zigbee 协议关闭照明。'); return; }
   if(text==='断网'){ simulateAttack('net'); return; }
 
-  // ★ 恢复网络：声纹通过后才进入口令阶段，并锁定角色快照
+  // 恢复网络
   if(text==='恢复网络'){
     if(sysState.relay==='ONLINE'){ appendChat('ai','当前网络已处于连接状态，无需恢复。'); return; }
-    // 记录此时的角色快照（此时必为 owner，因为 stranger 已在上方被拦截）
     voiceRoleAtChallenge=voiceRole;
     challengeCode=String(Math.floor(100000+Math.random()*900000));
     addLog('声纹验证通过，触发动态口令质询，防录音回放机制已激活','warn');
@@ -827,7 +894,7 @@ async function callAI(msg){
     ?`当前系统遭受【${lastAttackType==='ssh'?'SSH暴力破解':lastAttackType==='cpu'?'算力满载/恶意挖矿':lastAttackType==='udp'?'UDP Flood流量激增':lastAttackType==='voice'?'录音回放攻击':'用户主动断网'}】攻击，物理气隙已熔断。`
     :'当前系统运行平稳，无活跃威胁。';
   try{
-    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,attackContext:ctx,relayStatus:sysState.relay,user:currentUser})});
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,attackContext:ctx,relayStatus:sysState.relay,user:currentUser||'guest'})});
     if(!res.ok)throw new Error('err');
     const data=await res.json(); return data.reply||'推理完成，但未获得有效回复。';
   }catch(e){ addLog('云端不可用，切换本地知识库','warn'); return fallback(msg); }
@@ -842,11 +909,12 @@ function fallback(input){
     if(lastAttackType==='voice') return "录音回放攻击已被动态口令机制成功拦截。建议排查物理环境中是否存在未授权录音设备，并检查麦克风访问权限。";
     return "请先点击左侧攻击场景按钮触发演示，我将基于实际攻击类型给出针对性处置建议。";
   }
-  if(t.includes('你是谁')||t.includes('介绍')) return `我是 J.A.R.V.I.S，${currentUser} 的边缘智能安全助手。运行在本地边缘节点，通过硬件级物理气隙保护您的隐私与安全。`;
+  if(t.includes('你是谁')||t.includes('介绍')) return `我是 J.A.R.V.I.S，${currentUser||'访客'}的边缘智能安全助手。运行在本地边缘节点，通过硬件级物理气隙保护您的隐私与安全。`;
   if(t.includes('声纹')||t.includes('voiceprint')) return "声纹验证基于 Resemblyzer 模型提取声纹特征向量，计算余弦相似度。相似度超过 0.85 判定为授权用户，并结合动态口令实现双因子防录音回放。陌生人声纹将在第一阶段被直接拦截，不进入口令阶段。";
   if(t.includes('继电器')||t.includes('气隙')||t.includes('relay')) return "物理气隙继电器串联在广域网物理链路上，触发时直接断开电气连接，响应时延 <5ms，软件层面完全无法绕过，是系统安全的最终防线。";
   if(t.includes('专利')||t.includes('patent')) return "本系统核心创新已申请发明专利，涵盖边缘计算节点的物理安全熔断机制与声纹双因子认证架构，第一发明人为本系统主理人。";
   if(t.includes('密码')||t.includes('pin')||t.includes('账号')) return "账号与 PIN 码均仅存储在您的本地设备中，不上传任何服务器。PIN 码配合声纹双因子验证，确保只有物理在场的授权用户才能执行高权限操作。";
+  if(t.includes('游客')||t.includes('注册')||t.includes('登录')) return "您可以点击右上角「登录 / 注册」创建专属账号，绑定 PIN 码与声纹后，即可体验完整的高权限指令与防录音回放验证流程。";
   return `关于「${input}」，我正在本地知识库中检索。如需更深入的分析，请确保网络连接以启用云端推理引擎。`;
 }
 
@@ -866,7 +934,13 @@ function triggerLockdown(){
 
 // ========== 重置弹窗 ==========
 let rpv='';
-function openResetModal(){ rpv=''; updRPD(); document.getElementById('reset-pin-error').innerText=''; document.getElementById('reset-modal').classList.remove('hidden'); }
+function openResetModal(){
+  if(isGuest){
+    appendChat('ai','🔒 <span class="text-yellow-400 font-bold">游客模式不支持 PIN 验证</span><br><span class="text-gray-400 text-xs">请先<button onclick="showLoginOverlay()" class="text-[#00ffcc] hover:underline ml-1">登录 / 注册</button>后使用此功能。</span>');
+    return;
+  }
+  rpv=''; updRPD(); document.getElementById('reset-pin-error').innerText=''; document.getElementById('reset-modal').classList.remove('hidden');
+}
 function closeResetModal(){ document.getElementById('reset-modal').classList.add('hidden'); }
 function updRPD(){ document.querySelectorAll('#reset-pin-dots .pin-dot').forEach((d,i)=>d.classList.toggle('filled',i<rpv.length)); }
 function resetPinInput(d){ if(rpv.length>=4)return; rpv+=d; updRPD(); if(rpv.length===4)setTimeout(checkRP,200); }
@@ -896,7 +970,7 @@ function doResetSystem(){
   const wl=document.getElementById('wan-line'); if(wl)wl.setAttribute('stroke','#00ffcc33');
   appendChat('ai','✅ 身份验证通过，系统已恢复正常状态，广域网连接已重新建立。');
   addLog('系统状态已重置，恢复正常运行','success');
-  addAuditEvent('系统','气隙控制',`${currentUser} 授权重置，继电器重新闭合`,'执行成功','text-green-400');
+  addAuditEvent('系统','气隙控制',`${currentUser||'游客'} 授权重置，继电器重新闭合`,'执行成功','text-green-400');
 }
 
 // ========== 攻击模拟 ==========
