@@ -531,6 +531,7 @@ function handleMP(){
 }
 
 // ========== 声纹步骤 ==========
+// ★ 优化1：朗读句加长，保证演示时有足够的"采集感"
 function goVoice(){
   document.getElementById('step-pin-wrap').classList.add('hidden');
   document.getElementById('step-voice').classList.remove('hidden');
@@ -538,65 +539,156 @@ function goVoice(){
   if(isReturningUser){
     document.getElementById('voice-step-title').innerText='声纹身份验证';
     document.getElementById('voice-step-subtitle').innerText='请朗读下方文字以验证您的身份';
-    document.getElementById('voice-enroll-text').innerText=`"J.A.R.V.I.S 边缘节点，主理人身份确认，授权码 ${currentUser}-Zero-One。"`;
+    document.getElementById('voice-enroll-text').innerText=
+      `身份验证，${currentUser}，边缘节点，授权确认`;
     document.getElementById('btn-enroll-start').innerHTML='🎙️ 开始声纹验证';
   } else {
     document.getElementById('voice-step-title').innerText='声纹身份绑定';
     document.getElementById('voice-step-subtitle').innerText='朗读下方文字，系统将记录您的声纹特征';
-    document.getElementById('voice-enroll-text').innerText=`"J.A.R.V.I.S 边缘节点，主理人身份绑定，授权码 ${currentUser}-Zero-One。"`;
+    document.getElementById('voice-enroll-text').innerText=
+      `身份绑定，${currentUser}，边缘节点，授权确认`;
     document.getElementById('btn-enroll-start').innerHTML='🎙️ 开始录入声纹';
   }
   setStep(2);
 }
 
+// ★ 优化2：录音时长 3s→6s，模拟步骤间隔拉长，更有仪式感
 let evb=null;
 async function startVoiceStep(){
   const btn=document.getElementById('btn-enroll-start');
   const logDiv=document.getElementById('enroll-log');
   btn.disabled=true;
   btn.innerHTML=isReturningUser?'验证中，请朗读...':'录入中，请朗读...';
+
+  // 声波动画
   const wd=document.createElement('div');
   wd.className='voice-wave justify-center mb-3';
   wd.innerHTML=Array(7).fill('<div class="voice-bar"></div>').join('');
   btn.parentNode.insertBefore(wd,btn);
+
+  // ── 倒计时进度条 ──
+  const progressWrap=document.createElement('div');
+  progressWrap.className='w-full max-w-xs mx-auto mt-2 mb-1';
+  progressWrap.innerHTML=`
+    <div class="flex justify-between text-xs text-gray-500 mb-1">
+      <span>正在采集声纹...</span>
+      <span id="demo-countdown" class="text-[#00ffcc] font-bold">6s</span>
+    </div>
+    <div style="height:3px;background:#0a1a1a;border-radius:2px;overflow:hidden">
+      <div id="demo-progress-bar" style="height:100%;background:#00ffcc;width:100%;transition:width 1s linear;border-radius:2px"></div>
+    </div>`;
+  btn.parentNode.insertBefore(progressWrap,btn);
+
   let realMic=false;
+  const RECORD_SEC=6; // ★ 录音时长改为 6 秒
+
+  // 启动倒计时
+  let remaining=RECORD_SEC;
+  const countTimer=setInterval(()=>{
+    remaining--;
+    const cd=document.getElementById('demo-countdown');
+    const pb=document.getElementById('demo-progress-bar');
+    if(cd) cd.innerText=`${remaining}s`;
+    if(pb) pb.style.width=`${(remaining/RECORD_SEC)*100}%`;
+    if(remaining<=0) clearInterval(countTimer);
+  },1000);
+
   try{
     const stream=await navigator.mediaDevices.getUserMedia({audio:true});
     const rec=new MediaRecorder(stream),chunks=[];
     rec.ondataavailable=e=>chunks.push(e.data); rec.start();
-    const lp=document.createElement('p'); lp.className='text-[#00ffcc] text-xs'; lp.innerText='🎙️ 正在采集声纹（3秒）...'; logDiv.appendChild(lp);
+    const lp=document.createElement('p');
+    lp.className='text-[#00ffcc] text-xs mt-2';
+    lp.innerText=`🎙️ 正在采集声纹（${RECORD_SEC}秒），请朗读上方文字...`;
+    logDiv.appendChild(lp);
     addLog('麦克风已开启，采集声纹中...','success');
-    await sleep(3000); rec.stop(); stream.getTracks().forEach(t=>t.stop());
-    await new Promise(r=>rec.onstop=r); evb=new Blob(chunks,{type:'audio/webm'}); realMic=true;
+    await sleep(RECORD_SEC*1000);
+    rec.stop(); stream.getTracks().forEach(t=>t.stop());
+    await new Promise(r=>rec.onstop=r);
+    evb=new Blob(chunks,{type:'audio/webm'}); realMic=true;
   }catch(e){
-    const lpe=document.createElement('p'); lpe.className='text-yellow-400 text-xs'; lpe.innerText='⚠️ 麦克风不可用，使用模拟声纹'; logDiv.appendChild(lpe);
-    addLog('麦克风不可用，切换模拟模式','warn'); await sleep(800);
+    clearInterval(countTimer);
+    const lpe=document.createElement('p');
+    lpe.className='text-yellow-400 text-xs mt-2';
+    lpe.innerText='⚠️ 麦克风不可用，使用模拟声纹';
+    logDiv.appendChild(lpe);
+    addLog('麦克风不可用，切换模拟模式','warn');
+    await sleep(800);
   }
+
+  clearInterval(countTimer);
+  progressWrap.remove(); // 采集完成后移除进度条
+
   if(isReturningUser){
+    // ★ 验证流程：步骤间隔拉长至 1000ms，更真实
     const steps=[
-      {msg:'📊 提取声纹特征向量...',cls:'text-gray-400'},
-      {msg:'🔍 与注册声纹比对中...',cls:'text-gray-400'},
-      {msg:'✅ 声纹匹配成功（98.7%）',cls:'text-[#00ffcc]'},
-      {msg:`🔓 身份验证通过（${currentUser}）`,cls:'text-[#00ffcc]'},
+      {msg:'📊 提取声纹特征向量...',      cls:'text-gray-400',  delay:1000},
+      {msg:'🔍 与注册声纹比对中...',      cls:'text-gray-400',  delay:1200},
+      {msg:'📈 余弦相似度计算完成...',    cls:'text-gray-400',  delay:900},
+      {msg:'✅ 声纹匹配成功（98.7%）',   cls:'text-[#00ffcc]', delay:800},
+      {msg:`🔓 身份验证通过（${currentUser}）`, cls:'text-[#00ffcc]', delay:600},
     ];
-    for(const s of steps){ await sleep(800); const p=document.createElement('p'); p.className=s.cls+' text-xs'; p.innerText=s.msg; logDiv.appendChild(p); addLog(s.msg.replace(/[📊🔍✅🔓]/g,'').trim(),'success'); }
-    await sleep(400); wd.remove();
-    addAuditEvent('系统','声纹验证',`${currentUser} 声纹身份验证通过（${realMic?'真实音频':'模拟'}，98.7%）`,'成功','text-green-400');
-    enterMainUI(currentUser);
-    appendChat('ai',`✅ 欢迎回来，<strong class="text-white">${currentUser}</strong>！声纹验证通过，身份确认。<br><br>当前安全策略已激活：<br>• 🔐 高权限操作需 PIN 验证<br>• 🎙️ 恢复网络需声纹 + 动态口令双重确认<br>• ⚡ 开灯 / 关灯等指令可直接执行<br><br>建议体验顺序：<br>① 点击左侧「SSH 暴力破解」→ 观察自动熔断<br>② 🎙️ 说「恢复网络」→ 体验声纹验证流程<br>③ 切换「陌生人模式」再次尝试 → 观察拦截<br>④ 问我「如何处理这次攻击？」→ AI 分析`);
-  } else {
-    const steps=[
-      {msg:'📊 提取声纹特征向量...',cls:'text-gray-400'},
-      {msg:'✅ 声纹特征提取成功',cls:'text-[#00ffcc]'},
-      {msg:'💾 声纹数据已安全存储',cls:'text-gray-400'},
-      {msg:`🔒 身份绑定完成（${currentUser}）`,cls:'text-[#00ffcc]'},
-    ];
-    for(const s of steps){ await sleep(900); const p=document.createElement('p'); p.className=s.cls+' text-xs'; p.innerText=s.msg; logDiv.appendChild(p); addLog(s.msg.replace(/[📊✅💾🔒]/g,'').trim(),'success'); }
+    for(const s of steps){
+      await sleep(s.delay);
+      const p=document.createElement('p');
+      p.className=s.cls+' text-xs';
+      p.innerText=s.msg;
+      logDiv.appendChild(p);
+      addLog(s.msg.replace(/[📊🔍📈✅🔓]/g,'').trim(),'success');
+    }
     await sleep(500); wd.remove();
-    const users=getUsers(); users[currentUser].voiceEnrolled=true; saveUsers(users); isReturningUser=true;
-    addAuditEvent('系统','声纹录入',`${currentUser} 声纹绑定完成（${realMic?'真实音频':'模拟'}）`,'成功','text-green-400');
+    addAuditEvent('系统','声纹验证',
+      `${currentUser} 声纹身份验证通过（${realMic?'真实音频':'模拟'}，98.7%）`,
+      '成功','text-green-400');
     enterMainUI(currentUser);
-    appendChat('ai',`✅ 欢迎，<strong class="text-white">${currentUser}</strong>！身份绑定完成。<br><br>当前安全策略已激活：<br>• 🔐 高权限操作需 PIN 验证<br>• 🎙️ 恢复网络需声纹 + 动态口令双重确认<br>• ⚡ 开灯 / 关灯等指令可直接执行<br><br>建议体验顺序：<br>① 点击左侧「SSH 暴力破解」→ 观察自动熔断<br>② 🎙️ 说「恢复网络」→ 体验声纹验证流程<br>③ 切换「陌生人模式」再次尝试 → 观察拦截<br>④ 问我「如何处理这次攻击？」→ AI 分析`);
+    appendChat('ai',
+      `✅ 欢迎回来，<strong class="text-white">${currentUser}</strong>！声纹验证通过，身份确认。<br><br>`+
+      `当前安全策略已激活：<br>`+
+      `• 🔐 高权限操作需 PIN 验证<br>`+
+      `• 🎙️ 恢复网络需声纹 + 动态口令双重确认<br>`+
+      `• ⚡ 开灯 / 关灯等指令可直接执行<br><br>`+
+      `建议体验顺序：<br>`+
+      `① 点击左侧「SSH 暴力破解」→ 观察自动熔断<br>`+
+      `② 🎙️ 说「恢复网络」→ 体验声纹验证流程<br>`+
+      `③ 切换「陌生人模式」再次尝试 → 观察拦截<br>`+
+      `④ 问我「如何处理这次攻击？」→ AI 分析`);
+  } else {
+    // ★ 录入流程：步骤间隔拉长，增加"神经网络训练"步骤
+    const steps=[
+      {msg:'📊 提取声纹特征向量...',        cls:'text-gray-400',  delay:1000},
+      {msg:'🧠 神经网络声纹建模中...',      cls:'text-gray-400',  delay:1200},
+      {msg:'✅ 声纹特征提取成功',           cls:'text-[#00ffcc]', delay:900},
+      {msg:'🔐 加密声纹数据...',            cls:'text-gray-400',  delay:700},
+      {msg:'💾 声纹数据已安全存储',         cls:'text-gray-400',  delay:600},
+      {msg:`🔒 身份绑定完成（${currentUser}）`, cls:'text-[#00ffcc]', delay:500},
+    ];
+    for(const s of steps){
+      await sleep(s.delay);
+      const p=document.createElement('p');
+      p.className=s.cls+' text-xs';
+      p.innerText=s.msg;
+      logDiv.appendChild(p);
+      addLog(s.msg.replace(/[📊🧠✅🔐💾🔒]/g,'').trim(),'success');
+    }
+    await sleep(500); wd.remove();
+    const users=getUsers();
+    users[currentUser].voiceEnrolled=true;
+    saveUsers(users); isReturningUser=true;
+    addAuditEvent('系统','声纹录入',
+      `${currentUser} 声纹绑定完成（${realMic?'真实音频':'模拟'}）`,
+      '成功','text-green-400');
+    enterMainUI(currentUser);
+    appendChat('ai',
+      `✅ 欢迎，<strong class="text-white">${currentUser}</strong>！身份绑定完成。<br><br>`+
+      `当前安全策略已激活：<br>`+
+      `• 🔐 高权限操作需 PIN 验证<br>`+
+      `• 🎙️ 恢复网络需声纹 + 动态口令双重确认<br>`+
+      `• ⚡ 开灯 / 关灯等指令可直接执行<br><br>`+
+      `建议体验顺序：<br>`+
+      `① 点击左侧「SSH 暴力破解」→ 观察自动熔断<br>`+
+      `② 🎙️ 说「恢复网络」→ 体验声纹验证流程<br>`+
+      `③ 切换「陌生人模式」再次尝试 → 观察拦截<br>`+
+      `④ 问我「如何处理这次攻击？」→ AI 分析`);
   }
 }
 
