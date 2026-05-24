@@ -71,6 +71,9 @@ airgap-guardian-web/
 ├── /api
 │   └── chat.js         # AI 接口逻辑
 └── README.md           # 本文件
+```
+
+---
 
 ## 🔐 环境变量
 
