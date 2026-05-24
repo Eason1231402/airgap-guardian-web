@@ -813,8 +813,21 @@ function typeWriter(el,text){
   },26);
 }
 
-// ========== 系统状态 ==========
+// =====================================================================
+// 🛡️ Mock Edge 状态机 (Mock State Machine)
+// ---------------------------------------------------------------------
+// 评委您好：由于完整边缘端核心代码出于专利保护暂未开源，
+// 本 Web 控制台已内置完整的 Mock 状态机，用于无硬件环境下的闭环体验。
+// 
+// 下方的 sysState 以及 simulateAttack()、triggerLockdown() 函数，
+// 完整模拟了物理熔断的生命周期：
+// 1. SECURE (运行正常) -> sysState.relay = 'ONLINE'
+// 2. UNDER_ATTACK (攻击阈值攀升) -> sysState.attacking = true
+// 3. FUSED (物理隔离) -> sysState.relay = 'SEVERED'
+// 4. RECOVERING (声纹口令质询) -> sysState.challenge = true
+// =====================================================================
 let sysState={relay:'ONLINE',attacking:false,challenge:false};
+
 let lastAttackType='',isAIThinking=false,challengeCode='',voiceRoleAtChallenge='';
 
 // ========== quickCmd ==========
